@@ -1,0 +1,26 @@
+# /etc/conf.d/xdnad: config file for /etc/init.d/xdnad
+
+# Config file location
+#BITCOIND_CONFIGFILE="/etc/xdna/xdna.conf"
+
+# What directory to write pidfile to?  (created and owned by $BITCOIND_USER)
+#BITCOIND_PIDDIR="/var/run/xdnad"
+
+# What filename to give the pidfile
+#BITCOIND_PIDFILE="${BITCOIND_PIDDIR}/xdnad.pid"
+
+# Where to write xdnad data (be mindful that the blockchain is large)
+#BITCOIND_DATADIR="/var/lib/xdnad"
+
+# User and group to own xdnad process
+#BITCOIND_USER="xdna"
+#BITCOIND_GROUP="xdna"
+
+# Path to xdnad executable
+#BITCOIND_BIN="/usr/bin/xdnad"
+
+# Nice value to run xdnad under
+#BITCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+BITCOIND_OPTS=""

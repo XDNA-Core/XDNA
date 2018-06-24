@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=XDNA
+Comment=XDNA P2P Cryptocurrency
+Exec=xdna-qt %u
+Terminal=false
+Type=Application
+Icon=xdna128
+MimeType=x-scheme-handler/xdna;
+Categories=Office;Finance;
+Name[ru]=xdna-qt.desktop.desktop
