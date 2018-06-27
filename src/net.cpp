@@ -1369,25 +1369,30 @@ void ThreadMessageHandler()
     boost::mutex condition_mutex;
     boost::unique_lock<boost::mutex> lock(condition_mutex);
 
+    static int64_t nLastRebroadcast = 0;
+
     SetThreadPriority(THREAD_PRIORITY_BELOW_NORMAL);
     while (true) {
         vector<CNode*> vNodesCopy;
         {
             LOCK(cs_vNodes);
             vNodesCopy = vNodes;
-            BOOST_FOREACH (CNode* pnode, vNodesCopy) {
+            for (CNode* pnode : vNodesCopy) {
                 pnode->AddRef();
             }
         }
 
         // Poll the connected nodes for messages
-        CNode* pnodeTrickle = NULL;
+        CNode* pnodeTrickle = nullptr;
         if (!vNodesCopy.empty())
             pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
 
         bool fSleep = true;
 
-        BOOST_FOREACH (CNode* pnode, vNodesCopy) {
+        bool performRebroadcast = !IsInitialBlockDownload() && (GetTime() - nLastRebroadcast > 24 * 60 * 60);
+
+        for (CNode* pnode : vNodesCopy) {
+
             if (pnode->fDisconnect)
                 continue;
 
@@ -1410,16 +1415,30 @@ void ThreadMessageHandler()
             // Send messages
             {
                 TRY_LOCK(pnode->cs_vSend, lockSend);
-                if (lockSend)
+
+                if(lockSend) {
+
                     g_signals.SendMessages(pnode, pnode == pnodeTrickle || pnode->fWhitelisted);
+
+                    if(performRebroadcast) {
+
+                        // Periodically clear setAddrKnown to allow refresh broadcasts
+                        if (nLastRebroadcast)
+                            pnode->setAddrKnown.clear();
+
+                        // Rebroadcast our address
+                        AdvertiseLocal(pnode);
+
+                        nLastRebroadcast = GetTime();
+                    }
+                }
             }
             boost::this_thread::interruption_point();
         }
 
-
         {
             LOCK(cs_vNodes);
-            BOOST_FOREACH (CNode* pnode, vNodesCopy)
+            for (CNode* pnode : vNodesCopy)
                 pnode->Release();
         }
 

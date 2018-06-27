@@ -3355,9 +3355,6 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     // Enforce block.nVersion >= 2 rule that the coinbase starts with serialized block height
     CScript expect = CScript() << nHeight;
 
-    LogPrintf("block.vtx[0].vin[0].scriptSig = %s\n", HexStr(block.vtx[0].vin[0].scriptSig.begin(), block.vtx[0].vin[0].scriptSig.end()).c_str());
-    LogPrintf("block.vtx[0].vin[0].expected = %s\n", HexStr(expect.begin(), expect.end()).c_str());
-
     auto is_not_valid =
            block.vtx[0].vin[0].scriptSig.size() < expect.size()
         || !std::equal(expect.begin(), expect.end(), block.vtx[0].vin[0].scriptSig.begin());
@@ -4407,21 +4404,26 @@ void static ProcessGetData(CNode* pfrom)
 
     vector<CInv> vNotFound;
 
-    LOCK(cs_main);
-
     while (it != pfrom->vRecvGetData.end()) {
         // Don't bother if send buffer is too full to respond anyway
         if (pfrom->nSendSize >= SendBufferSize())
             break;
 
         const CInv& inv = *it;
-        {
-            boost::this_thread::interruption_point();
-            it++;
 
-            if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK) {
-                bool send = false;
+        boost::this_thread::interruption_point();
+        it++;
+
+        if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK) {
+
+            CBlock block;
+            bool   send = false;
+
+            {
+                LOCK(cs_main);
+
                 BlockMap::iterator mi = mapBlockIndex.find(inv.hash);
+
                 if (mi != mapBlockIndex.end()) {
                     if (chainActive.Contains(mi->second)) {
                         send = true;
@@ -4429,159 +4431,166 @@ void static ProcessGetData(CNode* pfrom)
                         // To prevent fingerprinting attacks, only send blocks outside of the active
                         // chain if they are valid, and no more than a max reorg depth than the best header
                         // chain we know about.
-                        send = mi->second->IsValid(BLOCK_VALID_SCRIPTS) && (pindexBestHeader != NULL) &&
-                               (chainActive.Height() - mi->second->nHeight < Params().MaxReorganizationDepth());
-                        if (!send) {
+                        send =  mi->second->IsValid(BLOCK_VALID_SCRIPTS)
+                             && pindexBestHeader
+                             && (chainActive.Height() - mi->second->nHeight < Params().MaxReorganizationDepth());
+
+                        if(!send)
                             LogPrintf("ProcessGetData(): ignoring request from peer=%i for old block that isn't in the main chain\n", pfrom->GetId());
-                        }
-                    }
-                }
-                // Don't send not-validated blocks
-                if (send && (mi->second->nStatus & BLOCK_HAVE_DATA)) {
-                    // Send block from disk
-                    CBlock block;
-                    if (!ReadBlockFromDisk(block, (*mi).second))
-                        assert(!"cannot load block from disk");
-                    if (inv.type == MSG_BLOCK)
-                        pfrom->PushMessage("block", block);
-                    else // MSG_FILTERED_BLOCK)
-                    {
-                        LOCK(pfrom->cs_filter);
-                        if (pfrom->pfilter) {
-                            CMerkleBlock merkleBlock(block, *pfrom->pfilter);
-                            pfrom->PushMessage("merkleblock", merkleBlock);
-                            // CMerkleBlock just contains hashes, so also push any transactions in the block the client did not see
-                            // This avoids hurting performance by pointlessly requiring a round-trip
-                            // Note that there is currently no way for a node to request any single transactions we didnt send here -
-                            // they must either disconnect and retry or request the full block.
-                            // Thus, the protocol spec specified allows for us to provide duplicate txn here,
-                            // however we MUST always provide at least what the remote peer needs
-                            typedef std::pair<unsigned int, uint256> PairType;
-                            BOOST_FOREACH (PairType& pair, merkleBlock.vMatchedTxn)
-                                if (!pfrom->setInventoryKnown.count(CInv(MSG_TX, pair.second)))
-                                    pfrom->PushMessage("tx", block.vtx[pair.first]);
-                        }
-                        // else
-                        // no response
                     }
 
-                    // Trigger them to send a getblocks request for the next batch of inventory
-                    if (inv.hash == pfrom->hashContinue) {
-                        // Bypass PushInventory, this must send even if redundant,
-                        // and we want it right after the last block so they don't
-                        // wait for other stuff first.
-                        vector<CInv> vInv;
-                        vInv.push_back(CInv(MSG_BLOCK, chainActive.Tip()->GetBlockHash()));
-                        pfrom->PushMessage("inv", vInv);
-                        pfrom->hashContinue = 0;
-                    }
-                }
-            } else if (inv.IsKnownType()) {
-                // Send stream from relay memory
-                bool pushed = false;
-                {
-                    LOCK(cs_mapRelay);
-                    map<CInv, CDataStream>::iterator mi = mapRelay.find(inv);
-                    if (mi != mapRelay.end()) {
-                        pfrom->PushMessage(inv.GetCommand(), (*mi).second);
-                        pushed = true;
-                    }
-                }
+                    // Don't send not-validated blocks
+                    send = send && (mi->second->nStatus & BLOCK_HAVE_DATA);
 
-                if (!pushed && inv.type == MSG_TX) {
-                    CTransaction tx;
-                    if (mempool.lookup(inv.hash, tx)) {
-                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                        ss.reserve(1000);
-                        ss << tx;
-                        pfrom->PushMessage("tx", ss);
-                        pushed = true;
+                    if(send) {
+
+                        // Send block from disk
+                        if (!ReadBlockFromDisk(block, mi->second))
+                            assert(!"cannot load block from disk");
                     }
-                }
-                if (!pushed && inv.type == MSG_TXLOCK_VOTE) {
-                    if (mapTxLockVote.count(inv.hash)) {
-                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                        ss.reserve(1000);
-                        ss << mapTxLockVote[inv.hash];
-                        pfrom->PushMessage("txlvote", ss);
-                        pushed = true;
-                    }
-                }
-                if (!pushed && inv.type == MSG_TXLOCK_REQUEST) {
-                    if (mapTxLockReq.count(inv.hash)) {
-                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                        ss.reserve(1000);
-                        ss << mapTxLockReq[inv.hash];
-                        pfrom->PushMessage("ix", ss);
-                        pushed = true;
-                    }
-                }
-                if (!pushed && inv.type == MSG_SPORK) {
-                    if (mapSporks.count(inv.hash)) {
-                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                        ss.reserve(1000);
-                        ss << mapSporks[inv.hash];
-                        pfrom->PushMessage("spork", ss);
-                        pushed = true;
-                    }
-                }
-
-                if (!pushed && inv.type == MSG_MASTERNODE_WINNER) {
-
-                    auto mnw = masternodePayments.mapMasternodePayeeVotes.find(inv.hash);
-
-                    if(mnw != masternodePayments.mapMasternodePayeeVotes.cend()) {
-                        CDataStream ss{SER_NETWORK, PROTOCOL_VERSION};
-                        ss.reserve(1000);
-                        ss << mnw->second;
-                        pfrom->PushMessage("mnw", ss);
-                        pushed = true;
-                    }
-                }
-
-                if (!pushed && inv.type == MSG_MASTERNODE_ANNOUNCE) {
-                    if (mnodeman.mapSeenMasternodeBroadcast.count(inv.hash)) {
-                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                        ss.reserve(1000);
-                        ss << mnodeman.mapSeenMasternodeBroadcast[inv.hash];
-                        pfrom->PushMessage("mnb", ss);
-                        pushed = true;
-                    }
-                }
-
-                if (!pushed && inv.type == MSG_MASTERNODE_PING) {
-                    if (mnodeman.mapSeenMasternodePing.count(inv.hash)) {
-                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                        ss.reserve(1000);
-                        ss << mnodeman.mapSeenMasternodePing[inv.hash];
-                        pfrom->PushMessage("mnp", ss);
-                        pushed = true;
-                    }
-                }
-
-                if (!pushed && inv.type == MSG_DSTX) {
-                    if (mapObfuscationBroadcastTxes.count(inv.hash)) {
-                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                        ss.reserve(1000);
-                        ss << mapObfuscationBroadcastTxes[inv.hash].tx << mapObfuscationBroadcastTxes[inv.hash].vin << mapObfuscationBroadcastTxes[inv.hash].vchSig << mapObfuscationBroadcastTxes[inv.hash].sigTime;
-
-                        pfrom->PushMessage("dstx", ss);
-                        pushed = true;
-                    }
-                }
-
-
-                if (!pushed) {
-                    vNotFound.push_back(inv);
                 }
             }
 
-            // Track requests for our stuff.
-            g_signals.Inventory(inv.hash);
+            if(send) {
+                if (inv.type == MSG_BLOCK)
+                    pfrom->PushMessage("block", block);
+                else // MSG_FILTERED_BLOCK)
+                {
+                    LOCK(pfrom->cs_filter);
+                    if (pfrom->pfilter) {
+                        CMerkleBlock merkleBlock(block, *pfrom->pfilter);
+                        pfrom->PushMessage("merkleblock", merkleBlock);
+                        // CMerkleBlock just contains hashes, so also push any transactions in the block the client did not see
+                        // This avoids hurting performance by pointlessly requiring a round-trip
+                        // Note that there is currently no way for a node to request any single transactions we didnt send here -
+                        // they must either disconnect and retry or request the full block.
+                        // Thus, the protocol spec specified allows for us to provide duplicate txn here,
+                        // however we MUST always provide at least what the remote peer needs
+                        typedef std::pair<unsigned int, uint256> PairType;
+                        BOOST_FOREACH (PairType& pair, merkleBlock.vMatchedTxn)
+                            if (!pfrom->setInventoryKnown.count(CInv(MSG_TX, pair.second)))
+                                pfrom->PushMessage("tx", block.vtx[pair.first]);
+                    }
+                    // else
+                    // no response
+                }
 
-            if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK)
-                break;
+                // Trigger them to send a getblocks request for the next batch of inventory
+                if (inv.hash == pfrom->hashContinue) {
+                    // Bypass PushInventory, this must send even if redundant,
+                    // and we want it right after the last block so they don't
+                    // wait for other stuff first.
+                    vector<CInv> vInv;
+                    vInv.push_back(CInv(MSG_BLOCK, chainActive.Tip()->GetBlockHash()));
+                    pfrom->PushMessage("inv", vInv);
+                    pfrom->hashContinue = 0;
+                }
+            }
+        } else if (inv.IsKnownType()) {
+            // Send stream from relay memory
+            bool pushed = false;
+            {
+                LOCK(cs_mapRelay);
+                map<CInv, CDataStream>::iterator mi = mapRelay.find(inv);
+                if (mi != mapRelay.end()) {
+                    pfrom->PushMessage(inv.GetCommand(), (*mi).second);
+                    pushed = true;
+                }
+            }
+
+            if (!pushed && inv.type == MSG_TX) {
+                CTransaction tx;
+                if (mempool.lookup(inv.hash, tx)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    ss << tx;
+                    pfrom->PushMessage("tx", ss);
+                    pushed = true;
+                }
+            }
+            if (!pushed && inv.type == MSG_TXLOCK_VOTE) {
+                if (mapTxLockVote.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    ss << mapTxLockVote[inv.hash];
+                    pfrom->PushMessage("txlvote", ss);
+                    pushed = true;
+                }
+            }
+            if (!pushed && inv.type == MSG_TXLOCK_REQUEST) {
+                if (mapTxLockReq.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    ss << mapTxLockReq[inv.hash];
+                    pfrom->PushMessage("ix", ss);
+                    pushed = true;
+                }
+            }
+            if (!pushed && inv.type == MSG_SPORK) {
+                if (mapSporks.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    ss << mapSporks[inv.hash];
+                    pfrom->PushMessage("spork", ss);
+                    pushed = true;
+                }
+            }
+
+            if (!pushed && inv.type == MSG_MASTERNODE_WINNER) {
+
+                auto mnw = masternodePayments.mapMasternodePayeeVotes.find(inv.hash);
+
+                if(mnw != masternodePayments.mapMasternodePayeeVotes.cend()) {
+                    CDataStream ss{SER_NETWORK, PROTOCOL_VERSION};
+                    ss.reserve(1000);
+                    ss << mnw->second;
+                    pfrom->PushMessage("mnw", ss);
+                    pushed = true;
+                }
+            }
+
+            if (!pushed && inv.type == MSG_MASTERNODE_ANNOUNCE) {
+                if (mnodeman.mapSeenMasternodeBroadcast.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    ss << mnodeman.mapSeenMasternodeBroadcast[inv.hash];
+                    pfrom->PushMessage("mnb", ss);
+                    pushed = true;
+                }
+            }
+
+            if (!pushed && inv.type == MSG_MASTERNODE_PING) {
+                if (mnodeman.mapSeenMasternodePing.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    ss << mnodeman.mapSeenMasternodePing[inv.hash];
+                    pfrom->PushMessage("mnp", ss);
+                    pushed = true;
+                }
+            }
+
+            if (!pushed && inv.type == MSG_DSTX) {
+                if (mapObfuscationBroadcastTxes.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    ss << mapObfuscationBroadcastTxes[inv.hash].tx << mapObfuscationBroadcastTxes[inv.hash].vin << mapObfuscationBroadcastTxes[inv.hash].vchSig << mapObfuscationBroadcastTxes[inv.hash].sigTime;
+
+                    pfrom->PushMessage("dstx", ss);
+                    pushed = true;
+                }
+            }
+
+
+            if (!pushed) {
+                vNotFound.push_back(inv);
+            }
         }
+
+        // Track requests for our stuff.
+        g_signals.Inventory(inv.hash);
+
+        if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK)
+            break;
     }
 
     pfrom->vRecvGetData.erase(pfrom->vRecvGetData.begin(), it);
@@ -4799,11 +4808,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return error("message inv size() = %u", vInv.size());
         }
 
-        LOCK(cs_main);
-
         std::vector<CInv> vToFetch;
 
         for(const auto& inv : vInv) {
+
+            LOCK(cs_main);
 
             boost::this_thread::interruption_point();
             pfrom->AddInventoryKnown(inv);
@@ -5563,22 +5572,6 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
     TRY_LOCK(cs_main, lockMain); // Acquire cs_main for IsInitialBlockDownload() and CNodeState()
     if (!lockMain)
         return true;
-
-    // Address refresh broadcast
-    static int64_t nLastRebroadcast;
-    if (!IsInitialBlockDownload() && (GetTime() - nLastRebroadcast > 24 * 60 * 60)) {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH (CNode* pnode, vNodes) {
-            // Periodically clear setAddrKnown to allow refresh broadcasts
-            if (nLastRebroadcast)
-                pnode->setAddrKnown.clear();
-
-            // Rebroadcast our address
-            AdvertiseLocal(pnode);
-        }
-        if (!vNodes.empty())
-            nLastRebroadcast = GetTime();
-    }
 
     //
     // Message: addr

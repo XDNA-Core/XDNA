@@ -124,7 +124,6 @@ public:
         return payment != vecPayments.cend();
     }
 
-    //fixme: CMasternodeBlockPayees::IsTransactionValid +MN level
     bool IsTransactionValid(const CTransaction& txNew);
     std::string GetRequiredPaymentsString();
 

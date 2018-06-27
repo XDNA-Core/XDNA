@@ -650,7 +650,7 @@
 
      QWidget .QFrame#frame_blue { /*blue frame */
 
-        background-image: url(':/images/frame_blue');
+        border-image: url(':/images/frame_blue') 0 0 0 0 stretch stretch;
         background-repeat:none;
         border-style: none;
        }

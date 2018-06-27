@@ -315,8 +315,10 @@ void CMasternodeSync::Process()
                 if (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3)
                     return;
 
-                if(mnodeman.DsegUpdate(pnode))
-                    ++RequestedMasternodeAttempt;
+                if(!mnodeman.DsegUpdate(pnode))
+                    continue;
+
+                ++RequestedMasternodeAttempt;
 
                 return;
             }
@@ -358,8 +360,10 @@ void CMasternodeSync::Process()
                 if (!chainActive.Tip())
                     return;
 
-                if(mnodeman.WinnersUpdate(pnode))
-                    ++RequestedMasternodeAttempt;
+                if(!mnodeman.WinnersUpdate(pnode))
+                    continue;
+
+                ++RequestedMasternodeAttempt;
 
                 return;
             }

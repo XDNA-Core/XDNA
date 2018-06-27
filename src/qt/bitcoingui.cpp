@@ -120,7 +120,7 @@ BitcoinGUI::BitcoinGUI(const NetworkStyle* networkStyle, QWidget* parent) : QMai
 this->setStyleSheet(GUIUtil::loadStyleSheet());
 
 GUIUtil::restoreWindowGeometry("nWindow", QSize(1065, 670), this);
-this->setFixedSize(1065,670);
+//this->setFixedSize(1065,670);
 QFontDatabase::addApplicationFont(":/fonts/xdna_font");
 
 QString windowTitle = tr("XDNA Core") + " - ";
