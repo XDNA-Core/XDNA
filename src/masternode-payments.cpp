@@ -427,7 +427,7 @@ std::string CMasternodeBlockPayees::GetRequiredPaymentsString()
                               + boost::lexical_cast<std::string>(payee.nVotes);
 
         if (ret != "Unknown") {
-            ret += ", " + payee_str;
+            ret += "," + payee_str;
         } else {
             ret = payee_str;
         }

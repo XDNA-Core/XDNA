@@ -20,6 +20,15 @@
 #include <boost/tokenizer.hpp>
 #include <fstream>
 
+namespace {
+
+void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
+        return !std::isspace(ch);
+    }));
+}
+
+} // noname namespace
 
 void SendMoney(const CTxDestination& address, CAmount nValue, CWalletTx& wtxNew, AvailableCoinsType coin_type = ALL_COINS)
 {
@@ -289,11 +298,12 @@ UniValue listmasternodes(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "[\n"
             "  {\n"
+            "    \"level\": n,          (numeric) Masternode Level\n"
             "    \"rank\": n,           (numeric) Masternode Rank (or 0 if not enabled)\n"
-            "    \"txhash\": \"hash\",    (string) Collateral transaction hash\n"
+            "    \"txhash\": \"hash\",  (string) Collateral transaction hash\n"
             "    \"outidx\": n,         (numeric) Collateral transaction output index\n"
             "    \"status\": s,         (string) Status (ENABLED/EXPIRED/REMOVE/etc)\n"
-            "    \"addr\": \"addr\",      (string) Masternode XDNA address\n"
+            "    \"addr\": \"addr\",    (string) Masternode XDNA address\n"
             "    \"version\": v,        (numeric) Masternode protocol version\n"
             "    \"lastseen\": ttt,     (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last seen\n"
             "    \"activetime\": ttt,   (numeric) The time in seconds since epoch (Jan 1 1970 GMT) masternode has been active\n"
@@ -333,6 +343,7 @@ UniValue listmasternodes(const UniValue& params, bool fHelp)
             CNetAddr node = CNetAddr(strHost, false);
             std::string strNetwork = GetNetworkName(node.GetNetwork());
 
+            obj.push_back(Pair("level", mn->Level()));
             obj.push_back(Pair("rank", (strStatus == "ENABLED" ? s.first : 0)));
             obj.push_back(Pair("network", strNetwork));
             obj.push_back(Pair("txhash", strTxHash));
@@ -386,10 +397,35 @@ UniValue getmasternodecount (const UniValue& params, bool fHelp)
 
             "\nResult:\n"
             "{\n"
-            "  \"total\": n,        (numeric) Total masternodes\n"
-            "  \"stable\": n,       (numeric) Stable count\n"
-            "  \"obfcompat\": n,    (numeric) Obfuscation Compatible\n"
-            "  \"enabled\": n,      (numeric) Enabled masternodes\n"
+            "  \"grandtotal\": n, (numeric) Grand Total masternodes\n"
+            "  \"total\": [\n"
+            "     {\n"
+            "       \"level\": n, (numeric) Masternodes level\n"
+            "       \"count\": n  (numeric) Total count\n"
+            "     }\n"
+            "     ,...\n"
+            "   ],\n"
+            "  \"enabled\": [\n"
+            "     {\n"
+            "       \"level\": n, (numeric) Masternodes level\n"
+            "       \"count\": n  (numeric) Enabled masternodes\n"
+            "     }\n"
+            "     ,...\n"
+            "   ],\n"
+            "  \"obfcompat\": [\n"
+            "     {\n"
+            "       \"level\": n, (numeric) Masternodes level\n"
+            "       \"count\": n  (numeric) Obfuscation Compatible\n"
+            "     }\n"
+            "     ,...\n"
+            "   ],\n"
+            "  \"stable\": [\n"
+            "     {\n"
+            "       \"level\": n, (numeric) Masternodes level\n"
+            "       \"count\": n  (numeric) Stable count\n"
+            "     }\n"
+            "     ,...\n"
+            "   ],\n"
             "  \"inqueue\": [\n"
             "     {\n"
             "       \"level\": n, (numeric) Masternodes level\n"
@@ -401,39 +437,66 @@ UniValue getmasternodecount (const UniValue& params, bool fHelp)
             "\nExamples:\n" +
             HelpExampleCli("getmasternodecount", "") + HelpExampleRpc("getmasternodecount", ""));
 
+    UniValue total{UniValue::VARR};
+    UniValue stable{UniValue::VARR};
+    UniValue obfcompat{UniValue::VARR};
+    UniValue enabled{UniValue::VARR};
     UniValue inqueue{UniValue::VARR};
 
     auto chain_tip = chainActive.Tip();
 
     for(unsigned l = CMasternode::LevelValue::MIN; l <= CMasternode::LevelValue::MAX; ++l) {
 
-        unsigned nCount = 0u;
+        UniValue total_item{UniValue::VOBJ};
 
-        if(chain_tip)
-            mnodeman.GetNextMasternodeInQueueForPayment(chain_tip->nHeight, l, true, nCount);
+        total_item.push_back(Pair("level", l));
+        total_item.push_back(Pair("count", mnodeman.size(l)));
+
+        total.push_back(total_item);
+
+        UniValue stable_item{UniValue::VOBJ};
+
+        stable_item.push_back(Pair("level", l));
+        stable_item.push_back(Pair("count", mnodeman.stable_size(l)));
+
+        stable.push_back(stable_item);
+
+        UniValue enabled_item{UniValue::VOBJ};
+
+        enabled_item.push_back(Pair("level", l));
+        enabled_item.push_back(Pair("count", mnodeman.CountEnabled(l)));
+
+        enabled.push_back(enabled_item);
 
         UniValue inqueue_item{UniValue::VOBJ};
 
+        unsigned inqueue_count = 0u;
+
+        if(chain_tip)
+            mnodeman.GetNextMasternodeInQueueForPayment(chain_tip->nHeight, l, true, inqueue_count);
+
         inqueue_item.push_back(Pair("level", l));
-        inqueue_item.push_back(Pair("count", nCount));
+        inqueue_item.push_back(Pair("count", inqueue_count));
 
         inqueue.push_back(inqueue_item);
+
+        UniValue obfcomat_item{UniValue::VOBJ};
+
+        obfcomat_item.push_back(Pair("level", l));
+        obfcomat_item.push_back(Pair("count", mnodeman.CountEnabled(l, ActiveProtocol())));
+
+        obfcompat.push_back(obfcomat_item);
+
     }
-
-    int ipv4 = 0, ipv6 = 0, onion = 0;
-
-    mnodeman.CountNetworks(ActiveProtocol(), ipv4, ipv6, onion);
 
     UniValue obj(UniValue::VOBJ);
 
-    obj.push_back(Pair("total", mnodeman.size()));
-    obj.push_back(Pair("stable", mnodeman.stable_size()));
-    obj.push_back(Pair("obfcompat", mnodeman.CountEnabled(CMasternode::LevelValue::UNSPECIFIED, ActiveProtocol())));
-    obj.push_back(Pair("enabled", mnodeman.CountEnabled()));
+    obj.push_back(Pair("grandtotal", mnodeman.size()));
+    obj.push_back(Pair("total", total));
+    obj.push_back(Pair("enabled", enabled));
+    obj.push_back(Pair("obfcompat", obfcompat));
+    obj.push_back(Pair("stable", stable));
     obj.push_back(Pair("inqueue", inqueue));
-    obj.push_back(Pair("ipv4", ipv4));
-    obj.push_back(Pair("ipv6", ipv6));
-    obj.push_back(Pair("onion", onion));
 
     return obj;
 }
@@ -822,7 +885,7 @@ UniValue getmasternodestatus (const UniValue& params, bool fHelp)
                         + activeMasternode.GetStatus());
 }
 
-UniValue getmasternodewinners (const UniValue& params, bool fHelp)
+UniValue getmasternodewinners(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() > 3)
         throw runtime_error(
@@ -838,7 +901,8 @@ UniValue getmasternodewinners (const UniValue& params, bool fHelp)
             "  {\n"
             "    \"nHeight\": n,           (numeric) block height\n"
             "    \"winner\": {\n"
-            "      \"address\": \"xxxx\",    (string) XDNA MN Address\n"
+            "      \"address\": \"xxxx\",  (string)  XDNA MN Address\n"
+            "      \"level\": n,           (numeric) Masternode level\n"
             "      \"nVotes\": n,          (numeric) Number of votes for winner\n"
             "    }\n"
             "  }\n"
@@ -848,11 +912,12 @@ UniValue getmasternodewinners (const UniValue& params, bool fHelp)
             "\nResult (multiple winners):\n"
             "[\n"
             "  {\n"
-            "    \"nHeight\": n,           (numeric) block height\n"
+            "    \"nHeight\": n,            (numeric) block height\n"
             "    \"winner\": [\n"
             "      {\n"
-            "        \"address\": \"xxxx\",  (string) XDNA MN Address\n"
-            "        \"nVotes\": n,        (numeric) Number of votes for winner\n"
+            "        \"address\": \"xxxx\", (string)  XDNA MN Address\n"
+            "        \"level\": n,          (numeric) Masternode level\n"
+            "        \"nVotes\": n,         (numeric) Number of votes for winner\n"
             "      }\n"
             "      ,...\n"
             "    ]\n"
@@ -873,15 +938,15 @@ UniValue getmasternodewinners (const UniValue& params, bool fHelp)
     int nLast = 10;
     std::string strFilter = "";
 
-    if (params.size() >= 1)
+    if(params.size() >= 1)
         nLast = atoi(params[0].get_str());
 
-    if (params.size() == 2)
+    if(params.size() == 2)
         strFilter = params[1].get_str();
 
     UniValue ret(UniValue::VARR);
 
-    for (int i = nHeight - nLast; i < nHeight + 20; i++) {
+    for(int i = nHeight - nLast; i < nHeight + 20; ++i) {
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("nHeight", i));
 
@@ -892,22 +957,30 @@ UniValue getmasternodewinners (const UniValue& params, bool fHelp)
             UniValue winner(UniValue::VARR);
             boost::char_separator<char> sep(",");
             boost::tokenizer< boost::char_separator<char> > tokens(strPayment, sep);
-            BOOST_FOREACH (const string& t, tokens) {
+            for (const string& t : tokens) {
                 UniValue addr(UniValue::VOBJ);
-                std::size_t pos = t.find(":");
-                std::string strAddress = t.substr(0,pos);
-                uint64_t nVotes = atoi(t.substr(pos+1));
+                std::size_t pos1 = t.find(":");
+                std::size_t pos2 = t.rfind(":");
+                std::string strAddress = t.substr(0, pos1);
+                ltrim(strAddress);
+                uint64_t level = atoi(t.substr(pos1 + 1, pos2));
+                uint64_t nVotes = atoi(t.substr(pos2 + 1));
                 addr.push_back(Pair("address", strAddress));
+                addr.push_back(Pair("level",  level));
                 addr.push_back(Pair("nVotes", nVotes));
                 winner.push_back(addr);
             }
             obj.push_back(Pair("winner", winner));
         } else if (strPayment.find("Unknown") == std::string::npos) {
             UniValue winner(UniValue::VOBJ);
-            std::size_t pos = strPayment.find(":");
-            std::string strAddress = strPayment.substr(0,pos);
-            uint64_t nVotes = atoi(strPayment.substr(pos+1));
+            std::size_t pos1 = strPayment.find(":");
+            std::size_t pos2 = strPayment.rfind(":");
+            std::string strAddress = strPayment.substr(0, pos1);
+            ltrim(strAddress);
+            uint64_t level = atoi(strPayment.substr(pos1 + 1, pos2));
+            uint64_t nVotes = atoi(strPayment.substr(pos2 + 1));
             winner.push_back(Pair("address", strAddress));
+            winner.push_back(Pair("level", level));
             winner.push_back(Pair("nVotes", nVotes));
             obj.push_back(Pair("winner", winner));
         } else {
@@ -917,7 +990,7 @@ UniValue getmasternodewinners (const UniValue& params, bool fHelp)
             obj.push_back(Pair("winner", winner));
         }
 
-            ret.push_back(obj);
+        ret.push_back(obj);
     }
 
     return ret;

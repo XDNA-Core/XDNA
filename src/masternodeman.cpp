@@ -394,29 +394,47 @@ void CMasternodeMan::Clear()
     nDsqCount = 0;
 }
 
-int CMasternodeMan::stable_size()
+int CMasternodeMan::size(unsigned mnlevel)
+{
+    auto check_level = mnlevel != CMasternode::LevelValue::UNSPECIFIED;
+
+    return std::count_if(vMasternodes.begin(), vMasternodes.end(), [=](CMasternode& mn){
+
+        if(check_level && mnlevel != mn.Level())
+            return false;
+
+        return true;
+    });
+}
+
+int CMasternodeMan::stable_size(unsigned mnlevel)
 {
     int nStable_size = 0;
     int nMinProtocol = ActiveProtocol();
     int64_t nMasternode_Min_Age = GetSporkValue(SPORK_6_MN_WINNER_MINIMUM_AGE);
     int64_t nMasternode_Age = 0;
 
+    auto check_level = mnlevel != CMasternode::LevelValue::UNSPECIFIED;
+
     for(auto& mn : vMasternodes) {
 
-        if (mn.protocolVersion < nMinProtocol)
+        if(mn.protocolVersion < nMinProtocol)
             continue; // Skip obsolete versions
 
-        if (IsSporkActive(SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT)) {
+        if(check_level && mnlevel != mn.Level())
+            continue;
+
+        if(IsSporkActive(SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT)) {
 
             nMasternode_Age = GetAdjustedTime() - mn.sigTime;
 
-            if (nMasternode_Age < nMasternode_Min_Age)
+            if(nMasternode_Age < nMasternode_Min_Age)
                 continue; // Skip masternodes younger than (default) 8000 sec (MUST be > MASTERNODE_REMOVAL_SECONDS)
         }
 
         mn.Check();
 
-        if (!mn.IsEnabled())
+        if(!mn.IsEnabled())
             continue; // Skip not-enabled masternodes
 
         ++nStable_size;
