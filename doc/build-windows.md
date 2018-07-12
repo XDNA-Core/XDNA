@@ -18,10 +18,15 @@ installing the toolchain will be different.
 
 First install the toolchains:
 
-    sudo apt-get install g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev
+    sudo apt-get install g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev git
 
+Acquire the source in the usual way:
+
+    git clone https://github.com/XDNA-Core/XDNA.git
+    
 To build executables for Windows 32-bit:
-
+    cd XDNA
+    PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
     cd depends
     make HOST=i686-w64-mingw32 -j4
     cd ..
@@ -29,7 +34,8 @@ To build executables for Windows 32-bit:
     make
 
 To build executables for Windows 64-bit:
-
+    cd XDNA
+    PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
     cd depends
     make HOST=x86_64-w64-mingw32 -j4
     cd ..
