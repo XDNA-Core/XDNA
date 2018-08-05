@@ -17,7 +17,7 @@
 #include <math.h>
 
 
-unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast)
+unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, uint32_t nTime)
 {
     /* current difficulty formula, XDNA - DarkGravity v3, written by Evan Duffield - evan@dashpay.io */
     const CBlockIndex* BlockLastSolved = pindexLast;
@@ -61,6 +61,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast)
         return bnNew.GetCompact();
     }
 
+    bool is_hexhash_work = nTime > Params().HEXHashActivationTime();
+
     for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
         if (PastBlocksMax > 0 && i > PastBlocksMax) {
             break;
@@ -68,10 +70,21 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast)
         CountBlocks++;
 
         if (CountBlocks <= PastBlocksMin) {
+
+            uint256 block_target;
+            block_target.SetCompact(BlockReading->nBits);
+
+            bool keccak2xhash =  is_hexhash_work
+                              && BlockReading->GetBlockTime() <= Params().HEXHashActivationTime();
+
+            // adjust difficulty of keccak (1350 MHps) blocks for hexhash (13.5 MHps)
+            if(keccak2xhash)
+                block_target *= 100;  // 100 = 1350 MHps / 13.5 MHps
+
             if (CountBlocks == 1) {
-                PastDifficultyAverage.SetCompact(BlockReading->nBits);
+                PastDifficultyAverage = block_target;
             } else {
-                PastDifficultyAverage = ((PastDifficultyAveragePrev * CountBlocks) + (uint256().SetCompact(BlockReading->nBits))) / (CountBlocks + 1);
+                PastDifficultyAverage = ((PastDifficultyAveragePrev * CountBlocks) + (block_target)) / (CountBlocks + 1);
             }
             PastDifficultyAveragePrev = PastDifficultyAverage;
         }

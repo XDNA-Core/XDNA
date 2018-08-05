@@ -54,12 +54,13 @@ static void convertSeed6(std::vector<CAddress>& vSeedsOut, const SeedSpec6* data
 // + Contains no strange transactions
 static Checkpoints::MapCheckpoints mapCheckpoints =
     boost::assign::map_list_of(0, uint256("000003b39d72ad4da1eb2ef2d044032dd95750cc25c435ecad2a236dd22b99fe"))
-                              (50, uint256("000000224104db4572f767923cafd543f36b9a4d1eee117c4dc3e1961ca6371b"));
+                              (50, uint256("000000224104db4572f767923cafd543f36b9a4d1eee117c4dc3e1961ca6371b"))
+                              (60200, uint256("00000000000031ba24b923e1966fbe17ae0cdff1efa9d1efc556e2a3cafb5c55"));
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1529677414, // * UNIX timestamp of last checkpoint block
-    50,          // * total number of transactions between genesis and last checkpoint
+    1533471657, // * UNIX timestamp of last checkpoint block
+    75079,          // * total number of transactions between genesis and last checkpoint
                 //   (the tx=... number in the SetBestChain debug.log lines)
     2000        // * estimated number of transactions per day after checkpoint
 };
@@ -80,9 +81,11 @@ static const Checkpoints::CCheckpointData dataRegtest = {
     0,
     100};
 
-CAmount CChainParams::SubsidyValue(SubsidySwitchPoints::key_type level) const
+CAmount CChainParams::SubsidyValue(SubsidySwitchPoints::key_type level, uint32_t nTime) const
 {
-    SubsidySwitchPoints::const_iterator point = subsidySwitchPoints.upper_bound(level);
+    const auto& points = (nTime <= nHEXHashTimestamp) ? subsidySwitchPoints : subsidySwitchPoints_HEXHash;
+
+    SubsidySwitchPoints::const_iterator point = points.upper_bound(level);
 
     if(point != subsidySwitchPoints.begin())
         point = std::prev(point);
@@ -134,6 +137,25 @@ public:
         };
         assert(subsidySwitchPoints.size());
 
+        subsidySwitchPoints_HEXHash = {
+            {0         ,   4 * COIN},
+            {20   * 1e9,   5 * COIN},
+            {30   * 1e9,   7 * COIN},
+            {50   * 1e9,  10 * COIN},
+            {80   * 1e9,  14 * COIN},
+            {130  * 1e9,  19 * COIN},
+            {210  * 1e9,  25 * COIN},
+            {340  * 1e9,  32 * COIN},
+            {550  * 1e9,  40 * COIN},
+            {890  * 1e9,  49 * COIN},
+            {1440 * 1e9,  59 * COIN},
+            {2330 * 1e9,  70 * COIN},
+            {3770 * 1e9,  82 * COIN},
+            {6100 * 1e9,  95 * COIN},
+            {9870 * 1e9, 109 * COIN},
+        };
+        assert(subsidySwitchPoints_HEXHash.size());
+
         nMaxReorganizationDepth = 100;
         nEnforceBlockUpgradeMajority = 750;
         nRejectBlockOutdatedMajority = 950;
@@ -176,7 +198,7 @@ public:
         genesis.nBits = 0x1e0ffff0;
         genesis.nNonce = 24657;
 
-        hashGenesisBlock = genesis.GetHash();
+        hashGenesisBlock = genesis.GetKeccakHash();
 
         assert(hashGenesisBlock == uint256("000003b39d72ad4da1eb2ef2d044032dd95750cc25c435ecad2a236dd22b99fe"));
         assert(genesis.hashMerkleRoot == uint256("89370975b13f97d8f9cfc373b0e9d5cc0e2e06b8dc283c76824e4df03ca2d60a"));
@@ -207,6 +229,7 @@ public:
         strObfuscationPoolDummyAddress = "X87q2gC9j6nNrnzCsg4aY6bHMLsT9nUhEw";
         nStartMasternodePayments = 1403728576; //Wed, 25 Jun 2014 20:36:16 GMT
 
+        nHEXHashTimestamp = 1533567600; // 6 August 2018 г., 15:00:00 GMT+00:00
     }
 
     const Checkpoints::CCheckpointData& Checkpoints() const
@@ -271,7 +294,7 @@ public:
         genesis.nTime = 1529667000;
         genesis.nNonce = 290796;
 
-        hashGenesisBlock = genesis.GetHash();
+        hashGenesisBlock = genesis.GetKeccakHash();
 
         assert(hashGenesisBlock == uint256("000006b020d0db323b363c4d762b6931cff1855fd8a85a4455f416a91e9424f1"));
 
@@ -320,7 +343,6 @@ public:
     {
         networkID = CBaseChainParams::REGTEST;
         strNetworkID = "regtest";
-        strNetworkID = "regtest";
         pchMessageStart[0] = 0xa1;
         pchMessageStart[1] = 0xcf;
         pchMessageStart[2] = 0x7e;
@@ -357,7 +379,7 @@ public:
         genesis.nBits = 0x207fffff;
         genesis.nNonce = 1;
 
-        hashGenesisBlock = genesis.GetHash();
+        hashGenesisBlock = genesis.GetKeccakHash();
         nDefaultPort = 51476;
 
         assert(hashGenesisBlock == uint256("300552a9db8b2921c3c07e5bbf8694df5099db579742e243daeaf5008b1e74de"));

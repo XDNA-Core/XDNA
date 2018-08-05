@@ -61,7 +61,7 @@ public:
     int GetDefaultPort() const { return nDefaultPort; }
     const uint256& ProofOfWorkLimit() const { return bnProofOfWorkLimit; }
     const uint256& StartWork() const { return bnStartWork; }
-    CAmount SubsidyValue(SubsidySwitchPoints::key_type level) const;
+    CAmount SubsidyValue(SubsidySwitchPoints::key_type level, uint32_t nTime) const;
     /** Used to check majorities for block version upgrade */
     int EnforceBlockUpgradeMajority() const { return nEnforceBlockUpgradeMajority; }
     int RejectBlockOutdatedMajority() const { return nRejectBlockOutdatedMajority; }
@@ -110,8 +110,13 @@ public:
     int ModifierUpgradeBlock() const { return nModifierUpdateBlock; }
     int LAST_POW_BLOCK() const { return nLastPOWBlock; }
     int StartMNPaymentsBlock() const {return nStartMasternodePaymentsBlock; }
-    
-    const SubsidySwitchPoints& GetSubsidySwitchPoints() const { return subsidySwitchPoints; }
+
+    uint32_t HEXHashActivationTime() const {return nHEXHashTimestamp;}
+
+    const SubsidySwitchPoints& GetSubsidySwitchPoints(uint32_t nTime) const
+    {
+       return (nTime <= nHEXHashTimestamp) ? subsidySwitchPoints : subsidySwitchPoints_HEXHash;
+    }
 
 protected:
     CChainParams() {}
@@ -159,6 +164,9 @@ protected:
     std::string strSporkKey;
     std::string strObfuscationPoolDummyAddress;
     int64_t nStartMasternodePayments;
+
+    uint32_t            nHEXHashTimestamp;
+    SubsidySwitchPoints subsidySwitchPoints_HEXHash;
 };
 
 /**

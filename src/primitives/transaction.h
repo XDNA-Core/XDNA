@@ -9,10 +9,10 @@
 
 #include <list>
 
-#include "amount.h"
-#include "script/script.h"
-#include "serialize.h"
-#include "uint256.h"
+#include "../amount.h"
+#include "../script/script.h"
+#include "../serialize.h"
+#include "../uint256.h"
 
 class CTransaction;
 

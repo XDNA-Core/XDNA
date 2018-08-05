@@ -151,3 +151,4 @@ contrib/devtools/split-debug.sh
 
 # Qt creator
 *.pro.user
+Makefile.am.user

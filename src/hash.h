@@ -20,6 +20,7 @@
 #include "crypto/sph_jh.h"
 #include "crypto/sph_keccak.h"
 #include "crypto/sph_skein.h"
+#include "crypto/hex/hex.h"
 
 #include <iomanip>
 #include <openssl/sha.h>
@@ -285,9 +286,7 @@ unsigned int MurmurHash3(unsigned int nHashSeed, const std::vector<unsigned char
 
 void BIP32Hash(const unsigned char chainCode[32], unsigned int nChild, unsigned char header, const unsigned char data[32], unsigned char output[64]);
 
-//int HMAC_SHA512_Init(HMAC_SHA512_CTX *pctx, const void *pkey, size_t len);
-//int HMAC_SHA512_Update(HMAC_SHA512_CTX *pctx, const void *pdata, size_t len);
-//int HMAC_SHA512_Final(unsigned char *pmd, HMAC_SHA512_CTX *pctx);
+void scrypt_hash(const char* pass, unsigned int pLen, const char* salt, unsigned int sLen, char* output, unsigned int N, unsigned int r, unsigned int p, unsigned int dkLen);
 
 /* ----------- Keccak256 Hash ------------------------------------------------ */
 template <typename T1>
@@ -306,6 +305,20 @@ inline uint256 HashKeccak256(const T1 pbegin, const T1 pend)
     return hash;
 }
 
-void scrypt_hash(const char* pass, unsigned int pLen, const char* salt, unsigned int sLen, char* output, unsigned int N, unsigned int r, unsigned int p, unsigned int dkLen);
+/* ----------- HEX ------------------------------------------------ */
+template <typename T>
+inline uint256 HashHEX(const T* pbegin, const T* pend)
+{
+    static T pblank[1];
+
+    uint256 hash;
+
+    const void* data = pbegin == pend ? pblank : pbegin;
+    size_t      len  = (pend - pbegin) * sizeof(T);
+
+    hex_hash(data, len, hash.begin());
+
+    return hash;
+}
 
 #endif // BITCOIN_HASH_H

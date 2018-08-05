@@ -7,10 +7,10 @@
 #ifndef BITCOIN_PRIMITIVES_BLOCK_H
 #define BITCOIN_PRIMITIVES_BLOCK_H
 
-#include "primitives/transaction.h"
-#include "keystore.h"
-#include "serialize.h"
-#include "uint256.h"
+#include "transaction.h"
+#include "../keystore.h"
+#include "../serialize.h"
+#include "../uint256.h"
 
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
@@ -68,6 +68,7 @@ public:
     }
 
     uint256 GetHash() const;
+    uint256 GetKeccakHash() const;
 
     int64_t GetBlockTime() const
     {

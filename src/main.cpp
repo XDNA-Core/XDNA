@@ -1617,7 +1617,7 @@ double ConvertBitsToDouble(unsigned int nBits)
     return dDiff;
 }
 
-CAmount GetBlockValue(int nHeight)
+CAmount GetBlockValue(int nHeight, uint32_t nTime)
 {
     if (nHeight == 0) {
         return 971712 * COIN;
@@ -1673,7 +1673,7 @@ CAmount GetBlockValue(int nHeight)
 
     int64_t netHashRate = chainActive.GetNetworkHashPS(24, nHeight);
 
-    return Params().SubsidyValue(netHashRate);
+    return Params().SubsidyValue(netHashRate, nTime);
 }
 
 int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
@@ -2215,7 +2215,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs - 1), nTimeConnect * 0.000001);
 
     //PoW phase redistributed fees to miner. PoS stage destroys fees.
-    CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight);
+    CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight, block.nTime);
     if (block.IsProofOfWork())
         nExpectedMint += nFees;
 
@@ -3168,7 +3168,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
                 return state.DoS(100, error("CheckBlock() : coinbase do not have the dev or fund reward (vout)."),
                 REJECT_INVALID, "bad-cb-reward-missing");
 
-            CAmount block_value = GetBlockValue(nHeight - 1);
+            CAmount block_value = GetBlockValue(nHeight - 1, block.nTime);
 
             if (block.vtx[0].vout[DevIndex].nValue < block_value * Params().GetDevFee() / 100 || block.vtx[0].vout[FoudIndex].nValue < block_value * Params().GetFundFee() / 100)
                 return state.DoS(100, error("CheckBlock() : coinbase do not have the enough reward for dev or fund."),
@@ -3249,7 +3249,7 @@ bool CheckWork(const CBlock block, CBlockIndex* const pindexPrev)
     if (!pindexPrev)
         return error("%s : null pindexPrev for block %s", __func__, block.GetHash().ToString().c_str());
 
-    unsigned int nBitsRequired = GetNextWorkRequired(pindexPrev);
+    unsigned int nBitsRequired = GetNextWorkRequired(pindexPrev, block.nTime);
 
     if (block.nBits != nBitsRequired)
         return error("%s : incorrect proof of work at %d", __func__, pindexPrev->nHeight + 1);
@@ -5418,6 +5418,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
 int ActiveProtocol()
 {
+    if(Params().HEXHashActivationTime() < GetAdjustedTime())
+        return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT;
+
 //    if (IsSporkActive(SPORK_X_NEW_PROTOCOL_ENFORCEMENT_X))
 //            return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT;
 

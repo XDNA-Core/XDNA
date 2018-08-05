@@ -59,7 +59,7 @@ bool IsBlockPayeeValid(const CBlock& block, int nBlockHeight)
     const CTransaction& txNew = (nBlockHeight > Params().LAST_POW_BLOCK() ? block.vtx[1] : block.vtx[0]);
 
     //check for masternode payee
-    if (masternodePayments.IsTransactionValid(txNew, nBlockHeight))
+    if (masternodePayments.IsTransactionValid(txNew, nBlockHeight, block.nTime))
         return true;
 
     LogPrintf("Invalid mn payment detected %s\n", txNew.ToString().c_str());
@@ -338,7 +338,7 @@ bool CMasternodePayments::AddWinningMasternode(CMasternodePaymentWinner& winnerI
     return true;
 }
 
-bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew)
+bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew, uint32_t nTime)
 {
     LOCK(cs_vecPayments);
 
@@ -363,7 +363,7 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew)
     if(!max_signatures.size())
         return true;
 
-    CAmount nReward = GetBlockValue(nBlockHeight);
+    CAmount nReward = GetBlockValue(nBlockHeight, nTime);
 
     std::string strPayeesPossible;
 
@@ -448,12 +448,12 @@ std::string CMasternodePayments::GetRequiredPaymentsString(int nBlockHeight)
     return mn_block->second.GetRequiredPaymentsString();
 }
 
-bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlockHeight)
+bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlockHeight, uint32_t nTime)
 {
     LOCK(cs_mapMasternodeBlocks);
 
     if (mapMasternodeBlocks.count(nBlockHeight)) {
-        return mapMasternodeBlocks[nBlockHeight].IsTransactionValid(txNew);
+        return mapMasternodeBlocks[nBlockHeight].IsTransactionValid(txNew, nTime);
     }
 
     return true;

@@ -348,56 +348,51 @@ void OverviewPage::updateMasternodeInfo()
 
 void OverviewPage::updatBlockChainInfo()
 {
- if (masternodeSync.IsBlockchainSynced())
- {
-int CurrentBlock = (int)chainActive.Height();
-int64_t netHashRate = chainActive.GetNetworkHashPS(24, CurrentBlock-1);
-int64_t BlockReward = Params().SubsidyValue(netHashRate);
-double BlockRewardXDNA =  static_cast<double>(BlockReward/COIN); 
-//int64_t XDNASupply = chainActive.Tip()->nMoneySupply / COIN; 
+    if(!masternodeSync.IsBlockchainSynced())
+        return;
 
-ui->label_CurrentBlock_value->setText(QString::number(CurrentBlock));
+    uint32_t tip_time = chainActive.Tip()->GetBlockTime();
 
+    int CurrentBlock = chainActive.Height();
+    int64_t netHashRate = chainActive.GetNetworkHashPS(24, CurrentBlock-1);
+    int64_t BlockReward = Params().SubsidyValue(netHashRate, tip_time);
+    double BlockRewardXDNA =  static_cast<double>(BlockReward/COIN);
+    //int64_t XDNASupply = chainActive.Tip()->nMoneySupply / COIN;
 
-int BitGunLevel = 0;
-    for (auto it =  Params().GetSubsidySwitchPoints().begin(); it != Params().GetSubsidySwitchPoints().end(); ++it)
+    ui->label_CurrentBlock_value->setText(QString::number(CurrentBlock));
+
+    int BitGunLevel = 0;
+
+    for(const auto& it : Params().GetSubsidySwitchPoints(tip_time))
     {
         BitGunLevel++;
-        if (it->second == BlockReward)
-        {
+
+        if(it.second == BlockReward)
             break;
-        }
     }
-ui->label_CurrentBitGun_value->setText(QString::number(BitGunLevel));
 
+    ui->label_CurrentBitGun_value->setText(QString::number(BitGunLevel));
 
-double  nethash_mhs = static_cast<double>(netHashRate/1000000) ;
+    double nethash_mhs = static_cast<double>(netHashRate/1000000) ;
 
+    if(nethash_mhs >= 1000000)
+    {
+        ui->label_Nethash->setText(tr("Nethash THs:"));
+        ui->label_Nethash_value->setText(QString::number(nethash_mhs/1000000,'f',2));
+    }
+    else if(nethash_mhs >= 1000)
+    {
+        ui->label_Nethash->setText(tr("Nethash GHs:"));
+        ui->label_Nethash_value->setText(QString::number(nethash_mhs/1000,'f',2));
+    }
+    else
+    {
+        ui->label_Nethash->setText(tr("Nethash MHs:"));
+        ui->label_Nethash_value->setText(QString::number(nethash_mhs));
+    }
 
-if (nethash_mhs >= 1000000)
-{
-    ui->label_Nethash->setText(tr("Nethash THs:"));
-    ui->label_Nethash_value->setText(QString::number(nethash_mhs/1000000,'f',2));
-}
-
-else if  (nethash_mhs >= 1000)
-{
-    ui->label_Nethash->setText(tr("Nethash GHs:"));
-    ui->label_Nethash_value->setText(QString::number(nethash_mhs/1000,'f',2));
-}
-
-else
-{
-    ui->label_Nethash->setText(tr("Nethash MHs:"));
-    ui->label_Nethash_value->setText(QString::number(nethash_mhs));
-}
-
-
-ui->label_CurrentBlockReward_value->setText(QString::number(BlockRewardXDNA));
-//ui->label_XDNASupply_value->setText(QString::number(XDNASupply));
-
-
-  }
+    ui->label_CurrentBlockReward_value->setText(QString::number(BlockRewardXDNA));
+    //ui->label_XDNASupply_value->setText(QString::number(XDNASupply));
 }
 
 void OverviewPage::openMyAddresses()

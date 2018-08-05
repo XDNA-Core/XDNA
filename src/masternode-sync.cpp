@@ -245,8 +245,15 @@ void CMasternodeSync::Process()
         GetNextAsset();
 
     // sporks synced but blockchain is not, wait until we're almost at a recent block to continue
-    if (Params().NetworkID() != CBaseChainParams::REGTEST &&
-        !IsBlockchainSynced() && RequestedMasternodeAssets > MASTERNODE_SYNC_SPORKS) return;
+    bool wait_blockchain_sync =  Params().NetworkID() != CBaseChainParams::REGTEST
+                              && !IsBlockchainSynced()
+                              && RequestedMasternodeAssets > MASTERNODE_SYNC_SPORKS;
+
+    if(wait_blockchain_sync)
+    {
+        nAssetSyncStarted = GetTime();
+        return;
+    }
 
     TRY_LOCK(cs_vNodes, lockRecv);
     if (!lockRecv) return;

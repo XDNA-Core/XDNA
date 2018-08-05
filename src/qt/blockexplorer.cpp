@@ -1,16 +1,16 @@
 #include "blockexplorer.h"
 #include "bitcoinunits.h"
-#include "chainparams.h"
+#include "../chainparams.h"
 #include "clientmodel.h"
-#include "core_io.h"
+#include "../core_io.h"
 #include "guiutil.h"
-#include "main.h"
-#include "net.h"
-#include "txdb.h"
+#include "../main.h"
+#include "../net.h"
+#include "../txdb.h"
 #include "ui_blockexplorer.h"
 #include "ui_interface.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "../util.h"
+#include "../utilstrencodings.h"
 #include <QDateTime>
 #include <QKeyEvent>
 #include <QMessageBox>
@@ -225,7 +225,7 @@ std::string BlockToString(CBlockIndex* pBlock)
     if (pBlock->nHeight == 0)
         Generated = OutVolume;
     else
-        Generated = GetBlockValue(pBlock->nHeight - 1);
+        Generated = GetBlockValue(pBlock->nHeight - 1, block.nTime);
 
     std::string BlockContentCells[] =
         {

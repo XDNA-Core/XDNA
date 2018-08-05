@@ -124,7 +124,7 @@ public:
         return payment != vecPayments.cend();
     }
 
-    bool IsTransactionValid(const CTransaction& txNew);
+    bool IsTransactionValid(const CTransaction& txNew, uint32_t nTime);
     std::string GetRequiredPaymentsString();
 
     ADD_SERIALIZE_METHODS;
@@ -241,7 +241,7 @@ public:
     void CleanPaymentList();
 
     bool GetBlockPayee(int nBlockHeight, unsigned mnlevel, CScript& payee);
-    bool IsTransactionValid(const CTransaction& txNew, int nBlockHeight);
+    bool IsTransactionValid(const CTransaction& txNew, int nBlockHeight, uint32_t nTime);
     bool IsScheduled(CMasternode& mn, int nNotBlockHeight) const;
     bool CanVote(const COutPoint& outMasternode, int nBlockHeight, unsigned mnlevel);
 

@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <climits>
 #include <limits>
-#include "pubkey.h"
+#include "../pubkey.h"
 #include <stdexcept>
 #include <stdint.h>
 #include <string.h>

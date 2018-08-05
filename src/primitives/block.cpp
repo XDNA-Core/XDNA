@@ -4,16 +4,31 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "primitives/block.h"
+#include "block.h"
 
-#include "hash.h"
-#include "script/standard.h"
-#include "script/sign.h"
-#include "tinyformat.h"
-#include "utilstrencodings.h"
-#include "util.h"
+#include "../hash.h"
+#include "../script/standard.h"
+#include "../script/sign.h"
+#include "../tinyformat.h"
+#include "../utilstrencodings.h"
+#include "../util.h"
+#include "../coins.h"
+#include "../chainparams.h"
 
 uint256 CBlockHeader::GetHash() const
+{
+    uint256 thash;
+
+    if (nTime <= Params().HEXHashActivationTime()) {
+        thash = HashKeccak256(BEGIN(nVersion), END(nNonce));
+    } else {
+        thash = HashHEX(BEGIN(nVersion), END(nNonce));
+    }
+
+    return thash;
+}
+
+uint256 CBlockHeader::GetKeccakHash() const
 {
     return HashKeccak256(BEGIN(nVersion), END(nNonce));
 }
