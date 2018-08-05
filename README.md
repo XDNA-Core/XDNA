@@ -15,7 +15,8 @@ More information at [xdna.io](http://www.xdna.io) Visit our ANN thread at [Bitco
 <tr><td>POW phase duration</td><td>1440000 blocks</td></tr>
 <tr><td>PoW block reward</td><td>Dynamic from 4 to 511 XDNA</td></tr>
 <tr><td>Instamine protection</td><td>First 720 blocks</td></tr>
-<tr><td>Hashing algorithm</td><td>Keccak</td></tr>
+<tr><td>Hashing algorithm from start</td><td>Keccak</td></tr>
+<tr><td>Hashing algorithm from 15.00 GMT 08 Aug 2018 </td><td>HEX</td></tr>
 <tr><td>Estimated XDNA supply during POW</td><td>138,000,000</td></tr>
 <tr><td>POS starting block</td><td>1440001</td></tr>
 <tr><td>POS phase duration</td><td>Unlimited</td></tr>
