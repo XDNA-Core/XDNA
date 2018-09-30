@@ -119,8 +119,7 @@ BitcoinGUI::BitcoinGUI(const NetworkStyle* networkStyle, QWidget* parent) : QMai
 /* Open CSS when configured */
 this->setStyleSheet(GUIUtil::loadStyleSheet());
 
-GUIUtil::restoreWindowGeometry("nWindow", QSize(1065, 670), this);
-//this->setFixedSize(1065,670);
+GUIUtil::restoreWindowGeometry("nWindow", QSize(1100, 670), this);
 QFontDatabase::addApplicationFont(":/fonts/xdna_font");
 
 QString windowTitle = tr("XDNA Core") + " - ";
@@ -200,10 +199,10 @@ QString windowTitle = tr("XDNA Core") + " - ";
     labelBlocksIcon->setFixedSize(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE);
 
     if (enableWallet) {
-        
+
         frameBlocksLayout->addWidget(labelEncryptionIcon);
     }
-    
+
    // frameBlocksLayout->addWidget(labelStakingIcon);
     frameBlocksLayout->addWidget(labelBlocksIcon);
     frameBlocksLayout->addWidget(labelConnectionsIcon);
@@ -259,7 +258,7 @@ QString windowTitle = tr("XDNA Core") + " - ";
     connect(openMNConfEditorAction, SIGNAL(triggered()), rpcConsole, SLOT(showMNConfEditor()));
     connect(showBackupsAction, SIGNAL(triggered()), rpcConsole, SLOT(showBackups()));
     connect(labelConnectionsIcon, SIGNAL(clicked()), this, SLOT(showPeers()));
-  
+
 
     // Get restart command-line parameters and handle restart
     connect(rpcConsole, SIGNAL(handleRestart(QStringList)), this, SLOT(handleRestart(QStringList)));
@@ -278,7 +277,7 @@ QString windowTitle = tr("XDNA Core") + " - ";
 
     // Subscribe to notifications from core
     subscribeToCoreSignals();
-  
+
    //will be activate when pow ends
    /*
    labelStakingIcon->hide();
@@ -306,7 +305,7 @@ BitcoinGUI::~BitcoinGUI()
 void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
 {
     QActionGroup* tabGroup = new QActionGroup(this);
- 
+
     overviewAction = new QAction(QIcon(":/icons/overview"), "", this);
     overviewAction->setStatusTip(tr("Show general overview of wallet"));
     overviewAction->setToolTip(overviewAction->statusTip());
@@ -317,7 +316,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
     overviewAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_1));
 #endif
     tabGroup->addAction(overviewAction);
-    
+
     sendCoinsAction = new QAction(QIcon(":/icons/send"), "", this);
     sendCoinsAction->setStatusTip(tr("Send coins to a XDNA address"));
     sendCoinsAction->setToolTip(sendCoinsAction->statusTip());
@@ -328,7 +327,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
 #endif
     tabGroup->addAction(sendCoinsAction);
-   
+
     receiveCoinsAction = new QAction(QIcon(":/icons/receiving_addresses"), "", this);
     receiveCoinsAction->setStatusTip(tr("Request payments (generates QR codes and XDNA: URIs)"));
     receiveCoinsAction->setToolTip(receiveCoinsAction->statusTip());
@@ -511,14 +510,8 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
 
 void BitcoinGUI::createMenuBar()
 {
-#ifdef Q_OS_MAC
-    // Create a decoupled menu bar on Mac which stays even if the window is closed
-    appMenuBar = new QMenuBar();
-#else
-    // Get the main window's menu bar on other platforms
     appMenuBar = menuBar();
-#endif
-
+    appMenuBar->setNativeMenuBar(false);
     // Configure the menus
     QMenu* file = appMenuBar->addMenu(tr("&File"));
     if (walletFrame) {
@@ -723,7 +716,7 @@ void BitcoinGUI::createTrayIconMenu()
 #endif
 
     // Configuration of the tray icon (or dock icon) icon menu
-   
+
     trayIconMenu->addAction(toggleHideAction);
      /*
     trayIconMenu->addSeparator();
@@ -954,7 +947,7 @@ if (!masternodeSync.IsBlockchainSynced() || !masternodeSync.IsSynced())
                                            .pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
             spinnerFrame = (spinnerFrame + 1) % SPINNER_FRAMES;
 }
-else   disconnect(synctimer, SIGNAL(timeout()), 0, 0);    
+else   disconnect(synctimer, SIGNAL(timeout()), 0, 0);
 }
 
 void BitcoinGUI::setNumBlocks(int count)
@@ -1004,7 +997,7 @@ void BitcoinGUI::setNumBlocks(int count)
         } else {
             int nAttempt;
             int progress = 0;
-            
+
 #ifdef ENABLE_WALLET
             if (walletFrame)
                 walletFrame->showOutOfSyncWarning(false);
@@ -1048,7 +1041,7 @@ void BitcoinGUI::setNumBlocks(int count)
         progressBar->setVisible(true);
 
         tooltip = tr("Catching up...") + QString("<br>") + tooltip;
-                
+
         prevBlocks = count;
 
 #ifdef ENABLE_WALLET
