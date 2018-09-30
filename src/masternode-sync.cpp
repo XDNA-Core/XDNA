@@ -92,18 +92,6 @@ void CMasternodeSync::AddedMasternodeList(uint256 hash)
     }
 
     lastMasternodeList = GetTime();
-
-/*
-    if (mnodeman.mapSeenMasternodeBroadcast.count(hash)) {
-        if (mapSeenSyncMNB[hash] < MASTERNODE_SYNC_THRESHOLD) {
-            lastMasternodeList = GetTime();
-            mapSeenSyncMNB[hash]++;
-        }
-    } else {
-        lastMasternodeList = GetTime();
-        mapSeenSyncMNB.insert(make_pair(hash, 1));
-    }
-*/
 }
 
 void CMasternodeSync::AddedMasternodeWinner(uint256 hash)
@@ -121,18 +109,6 @@ void CMasternodeSync::AddedMasternodeWinner(uint256 hash)
     }
 
     lastMasternodeWinner = GetTime();
-
-/*
-    if (masternodePayments.mapMasternodePayeeVotes.count(hash)) {
-        if (mapSeenSyncMNW[hash] < MASTERNODE_SYNC_THRESHOLD) {
-            lastMasternodeWinner = GetTime();
-            mapSeenSyncMNW[hash]++;
-        }
-    } else {
-        lastMasternodeWinner = GetTime();
-        mapSeenSyncMNW.insert(make_pair(hash, 1));
-    }
-*/
 }
 
 void CMasternodeSync::GetNextAsset()

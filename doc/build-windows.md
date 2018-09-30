@@ -23,7 +23,7 @@ First install the toolchains:
 Acquire the source in the usual way:
 
     git clone https://github.com/XDNA-Core/XDNA.git
-    
+
 To build executables for Windows 32-bit:
     cd XDNA
     PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
@@ -43,4 +43,3 @@ To build executables for Windows 64-bit:
     make
 
 For further documentation on the depends system see [README.md](../depends/README.md) in the depends directory.
-
