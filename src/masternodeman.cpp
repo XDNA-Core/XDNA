@@ -461,15 +461,15 @@ unsigned CMasternodeMan::CountEnabled(unsigned mnlevel, int protocolVersion)
     });
 }
 
-std::map<unsigned, unsigned> CMasternodeMan::CountEnabledByLevels(int protocolVersion)
+std::map<unsigned, int> CMasternodeMan::CountEnabledByLevels(int protocolVersion)
 {
     if(protocolVersion == -1)
         protocolVersion = masternodePayments.GetMinMasternodePaymentsProto();
 
-    std::map<unsigned, unsigned> result;
+    std::map<unsigned, int> result;
 
     for(unsigned l = CMasternode::LevelValue::MIN; l <= CMasternode::LevelValue::MAX; ++l)
-        result.emplace(l, 0u);
+        result.emplace(l, 0);
 
     for(auto& mn : vMasternodes)
     {
@@ -549,14 +549,7 @@ bool CMasternodeMan::WinnersUpdate(CNode* node)
         }
     }
 
-    auto mn_counts = mnodeman.CountEnabledByLevels();
-
-    unsigned max_mn_count = 0u;
-
-    for(const auto& count : mn_counts)
-        max_mn_count = std::max(max_mn_count, count.second);
-
-    node->PushMessage("mnget", max_mn_count);
+    node->PushMessage("mnget", mnodeman.CountEnabled());
     int64_t askAgain = GetTime() + MASTERNODES_DSEG_SECONDS;
     mWeAskedForWinnerMasternodeList[node->addr] = askAgain;
     return true;
@@ -572,7 +565,7 @@ CMasternode* CMasternodeMan::Find(const CScript& payee)
         if (payee2 == payee)
             return &mn;
     }
-    return nullptr;
+    return NULL;
 }
 
 CMasternode* CMasternodeMan::Find(const CTxIn& vin)
@@ -583,7 +576,7 @@ CMasternode* CMasternodeMan::Find(const CTxIn& vin)
         if (mn.vin.prevout == vin.prevout)
             return &mn;
     }
-    return nullptr;
+    return NULL;
 }
 
 
@@ -595,7 +588,7 @@ CMasternode* CMasternodeMan::Find(const CPubKey& pubKeyMasternode)
         if (mn.pubKeyMasternode == pubKeyMasternode)
             return &mn;
     }
-    return nullptr;
+    return NULL;
 }
 
 CMasternode* CMasternodeMan::Find(const CService& service)
@@ -617,38 +610,39 @@ CMasternode* CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight
 {
     LOCK(cs);
 
+    CMasternode* pBestMasternode = nullptr;
     std::vector<std::pair<int64_t, CTxIn> > vecMasternodeLastPaid;
 
     /*
         Make a vector with all of the last paid times
     */
 
-    int nMnCount = CountEnabled(mnlevel);
+    auto nMnCount = CountEnabled(mnlevel);
 
     for(CMasternode& mn : vMasternodes) {
+
+        mn.Check();
+
+        if (!mn.IsEnabled())
+            continue;
 
         if(mn.Level() != mnlevel)
             continue;
 
         //check protocol version
-        if(mn.protocolVersion < masternodePayments.GetMinMasternodePaymentsProto())
+        if (mn.protocolVersion < masternodePayments.GetMinMasternodePaymentsProto())
             continue;
 
-        mn.Check();
-
-        if(!mn.IsEnabled())
-            continue;
-
-        //it's in the list -- so let's skip it
-        if(masternodePayments.IsScheduled(mn, nMnCount, nBlockHeight))
+        //it's in the list (up to 8 entries ahead of current block to allow propagation) -- so let's skip it
+        if (masternodePayments.IsScheduled(mn, nBlockHeight))
             continue;
 
         //it's too new, wait for a cycle
-        if(fFilterSigTime && mn.sigTime + (nMnCount * 2.6 * 60) > GetAdjustedTime())
+        if (fFilterSigTime && mn.sigTime + (nMnCount * 2.6 * 60) > GetAdjustedTime())
             continue;
 
         //make sure it has as many confirmations as there are masternodes
-        if(mn.GetMasternodeInputAge() < nMnCount)
+        if (mn.GetMasternodeInputAge() < nMnCount)
             continue;
 
         vecMasternodeLastPaid.emplace_back(mn.SecondsSincePayment(), mn.vin);
@@ -664,31 +658,24 @@ CMasternode* CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight
     sort(vecMasternodeLastPaid.rbegin(), vecMasternodeLastPaid.rend(), CompareLastPaid());
 
     // Look at 1/10 of the oldest nodes (by last payment), calculate their scores and pay the best one
-    //  -- This doesn't look at who is being paid in the scheduled blocks, allowing for double payments very rarely
-
-    int     nCountTenth = nMnCount / 10;
+    //  -- This doesn't look at who is being paid in the +8-10 blocks, allowing for double payments very rarely
+    //  -- 1/100 payments should be a double payment on mainnet - (1/(3000/10))*2
+    //  -- (chance per block * chances before IsScheduled will fire)
+    int nTenthNetwork = CountEnabled(mnlevel) / 10;
+    int nCountTenth = 0;
     uint256 nHigh = 0;
-
-    CMasternode* pBestMasternode = nullptr;
-
-    for(const auto& s : vecMasternodeLastPaid) {
-
+    BOOST_FOREACH (PAIRTYPE(int64_t, CTxIn) & s, vecMasternodeLastPaid) {
         CMasternode* pmn = Find(s.second);
-
-        if(!pmn)
-            continue;
+        if (!pmn) break;
 
         uint256 n = pmn->CalculateScore(1, nBlockHeight - 100);
-
-        if(n > nHigh) {
+        if (n > nHigh) {
             nHigh = n;
             pBestMasternode = pmn;
         }
-
-        if(--nCountTenth > 0)
-            break;
+        nCountTenth++;
+        if (nCountTenth >= nTenthNetwork) break;
     }
-
     return pBestMasternode;
 }
 
@@ -881,7 +868,7 @@ CMasternode* CMasternodeMan::GetMasternodeByRank(int nRank, int64_t nBlockHeight
         }
     }
 
-    return nullptr;
+    return NULL;
 }
 
 void CMasternodeMan::ProcessMasternodeConnections()
@@ -892,7 +879,7 @@ void CMasternodeMan::ProcessMasternodeConnections()
     LOCK(cs_vNodes);
     BOOST_FOREACH (CNode* pnode, vNodes) {
         if (pnode->fObfuScationMaster) {
-            if (obfuScationPool.pSubmittedToMasternode && pnode->addr == obfuScationPool.pSubmittedToMasternode->addr)
+            if (obfuScationPool.pSubmittedToMasternode != NULL && pnode->addr == obfuScationPool.pSubmittedToMasternode->addr)
                 continue;
 
             LogPrintf("Closing Masternode connection peer=%i \n", pnode->GetId());
@@ -987,7 +974,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             // if nothing significant failed, search existing Masternode list
             CMasternode* pmn = Find(mnp.vin);
             // if it's known, don't ask for the mnb, just return
-            if (pmn) return;
+            if (pmn != NULL) return;
         }
 
         // something significant is broken or mn is unknown,

@@ -223,7 +223,7 @@ public:
         fMineBlocksOnDemand = false;
         fSkipProofOfWorkCheck = false;
         fTestnetToBeDeprecatedFieldRPC = false;
-        fHeadersFirstSyncingActive = true;
+        fHeadersFirstSyncingActive = false;
 
         nPoolMaxTransactions = 3;
         strSporkKey = "04520C1E6A46596DD9CA9A1A69B96D630410CBA2A1047FC462ADAA5D3BE451CC43B2E30C64A03513F31B3DB9450A3FC2F742DCB4AD99450575219549890392F465";

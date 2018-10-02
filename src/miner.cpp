@@ -332,10 +332,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet, 
                 }
             }
         }
-
         if (!fProofOfStake)
             UpdateTime(pblock, pindexPrev);
-
         CAmount block_value = GetBlockValue(nHeight - 1, pblock->nTime);
 
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;

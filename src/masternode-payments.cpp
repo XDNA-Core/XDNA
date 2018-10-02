@@ -14,7 +14,6 @@
 #include "sync.h"
 #include "util.h"
 #include "utilmoneystr.h"
-#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -131,7 +130,26 @@ void CMasternodePayments::ProcessMessageMasternodePayments(CNode* pfrom, std::st
     if (!masternodeSync.IsBlockchainSynced()) return;
 
     if (fLiteMode) return; //disable all Obfuscation/Masternode related functionality
+/*
+    if (strCommand == "mnget") { //Masternode Payments Request Sync
 
+        int nCountNeeded;
+        vRecv >> nCountNeeded;
+
+        if (Params().NetworkID() == CBaseChainParams::MAIN) {
+
+            if (pfrom->HasFulfilledRequest("mnget")) {
+                LogPrintf("mnget - peer already asked me for the list\n");
+                Misbehaving(pfrom->GetId(), 20);
+                return;
+            }
+        }
+
+        pfrom->FulfilledRequest("mnget");
+        masternodePayments.Sync(pfrom, nCountNeeded);
+        LogPrint("mnpayments", "mnget - Sent Masternode winners to peer %i\n", pfrom->GetId());
+    } else
+*/
     if (strCommand == "mnw") { //Masternode Payments Declare Winner
         //this is required in litemodef
         CMasternodePaymentWinner winner;
@@ -171,14 +189,14 @@ void CMasternodePayments::ProcessMessageMasternodePayments(CNode* pfrom, std::st
             return;
         }
 
-        int nFirstBlock = nHeight - mnodeman.CountEnabled(winner.payeeLevel) * 125 / 100;
+        int nFirstBlock = nHeight - mnodeman.CountEnabled(winner.payeeLevel) / 100 * 125;
         if (winner.nBlockHeight < nFirstBlock || winner.nBlockHeight > nHeight + 20) {
             LogPrint("mnpayments", "mnw - winner out of range - FirstBlock %d Height %d bestHeight %d\n", nFirstBlock, winner.nBlockHeight, nHeight);
             return;
         }
 
         if (!masternodePayments.CanVote(winner.vinMasternode.prevout, winner.nBlockHeight, winner.payeeLevel)) {
-            //  LogPrint("mnpayments", "mnw - masternode already voted - %s (%d - %d)\n", winner.vinMasternode.prevout.ToStringShort(), winner.payeeLevel, winner.nBlockHeight);
+            //  LogPrintf("mnw - masternode already voted - %s\n", winner.vinMasternode.prevout.ToStringShort());
             return;
         }
 
@@ -232,7 +250,8 @@ bool CMasternodePayments::GetBlockPayee(int nBlockHeight, unsigned mnlevel, CScr
 }
 
 // Is this masternode scheduled to get paid soon?
-bool CMasternodePayments::IsScheduled(CMasternode& mn, int nSameLevelMNCount, int nNotBlockHeight) const
+// -- Only look ahead up to 8 blocks to allow for propagation of the latest 2 winners
+bool CMasternodePayments::IsScheduled(CMasternode& mn, int nNotBlockHeight) const
 {
     LOCK(cs_mapMasternodeBlocks);
 
@@ -240,7 +259,7 @@ bool CMasternodePayments::IsScheduled(CMasternode& mn, int nSameLevelMNCount, in
     {
         TRY_LOCK(cs_main, locked);
 
-        if(!locked)
+        if (!locked)
             return false;
 
         auto chain_tip = chainActive.Tip();
@@ -253,7 +272,7 @@ bool CMasternodePayments::IsScheduled(CMasternode& mn, int nSameLevelMNCount, in
 
     CScript mnpayee = GetScriptForDestination(mn.pubKeyCollateralAddress.GetID());
 
-    for(int64_t h_upper_bound = nHeight + 10, h = h_upper_bound - std::min(10, nSameLevelMNCount - 1); h < h_upper_bound; ++h) {
+    for(int64_t h = nHeight; h <= nHeight + 8; ++h) {
 
         if(h == nNotBlockHeight)
             continue;
@@ -279,7 +298,7 @@ bool CMasternodePayments::CanVote(const COutPoint& outMasternode, int nBlockHeig
 {
     LOCK(cs_mapMasternodePayeeVotes);
 
-    uint256 key = ((outMasternode.hash + outMasternode.n) << 4) + mnlevel;
+    uint256 key = outMasternode.hash + outMasternode.n + mnlevel;
 
     auto ins_res = mapMasternodesLastVote.emplace(key, nBlockHeight);
 
@@ -287,7 +306,7 @@ bool CMasternodePayments::CanVote(const COutPoint& outMasternode, int nBlockHeig
 
         auto& last_vote = ins_res.first->second;
 
-        if(last_vote >= nBlockHeight)
+        if(last_vote <= nBlockHeight)
             return false;
 
         last_vote = nBlockHeight;
@@ -388,6 +407,7 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew, uint3
     }
 
     LogPrintf("CMasternodePayments::IsTransactionValid - Missing required payment to %s\n", strPayeesPossible.c_str());
+//    LogPrintf("CMasternodePayments::IsTransactionValid - Missing required payment of %s to %s\n", FormatMoney(requiredMasternodePayment).c_str(), strPayeesPossible.c_str());
     return false;
 }
 
@@ -451,7 +471,7 @@ void CMasternodePayments::CleanPaymentList()
     }
 
     //keep up to five cycles for historical sake
-    int nLimit = std::max(mnodeman.size() * 125 / 100, 1000);
+    int nLimit = std::max(mnodeman.size() / 100 * 125, 1000);
 
     std::map<uint256, CMasternodePaymentWinner>::iterator it = mapMasternodePayeeVotes.begin();
     while (it != mapMasternodePayeeVotes.end()) {
@@ -512,14 +532,12 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
     if(!fMasterNode)
         return false;
 
-    auto nWinnerBlockHeight = nBlockHeight + 10;
-
     //reference node - hybrid mode
 
-    if(nWinnerBlockHeight <= nLastBlockHeight)
+    if(nBlockHeight <= nLastBlockHeight)
         return false;
 
-    int n = mnodeman.GetMasternodeRank(activeMasternode.vin, nWinnerBlockHeight - 100, ActiveProtocol());
+    int n = mnodeman.GetMasternodeRank(activeMasternode.vin, nBlockHeight - 100, ActiveProtocol());
 
     if(n == -1) {
         LogPrint("mnpayments", "CMasternodePayments::ProcessBlock - Unknown Masternode\n");
@@ -531,7 +549,7 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
         return false;
     }
 
-    LogPrintf("CMasternodePayments::ProcessBlock() Start nHeight %d - vin %s. \n", nWinnerBlockHeight, activeMasternode.vin.prevout.hash.ToString());
+    LogPrintf("CMasternodePayments::ProcessBlock() Start nHeight %d - vin %s. \n", nBlockHeight, activeMasternode.vin.prevout.hash.ToString());
     // pay to the oldest MN that still had no payment but its input is old enough and it was active long enough
 
     std::string errorMessage;
@@ -547,9 +565,11 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
 
     for(unsigned mnlevel = CMasternode::LevelValue::MIN; mnlevel <= CMasternode::LevelValue::MAX; ++mnlevel) {
 
+        CMasternodePaymentWinner newWinner{activeMasternode.vin};
+
         unsigned nCount = 0;
 
-        auto pmn = mnodeman.GetNextMasternodeInQueueForPayment(nWinnerBlockHeight, mnlevel, true, nCount);
+        auto pmn = mnodeman.GetNextMasternodeInQueueForPayment(nBlockHeight, mnlevel, true, nCount);
 
         if(!pmn) {
             LogPrintf("CMasternodePayments::ProcessBlock() Failed to find masternode level %d to pay \n", mnlevel);
@@ -558,9 +578,7 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
 
         auto payee = GetScriptForDestination(pmn->pubKeyCollateralAddress.GetID());
 
-        CMasternodePaymentWinner newWinner{activeMasternode.vin};
-
-        newWinner.nBlockHeight = nWinnerBlockHeight;
+        newWinner.nBlockHeight = nBlockHeight;
         newWinner.AddPayee(payee, mnlevel);
 
         CTxDestination address1;
@@ -589,7 +607,7 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
         winner.Relay();
     }
 
-    nLastBlockHeight = nWinnerBlockHeight;
+    nLastBlockHeight = nBlockHeight;
 
     return true;
 }
@@ -635,13 +653,8 @@ void CMasternodePayments::Sync(CNode* node, int nCountNeeded)
 
     auto mn_counts = mnodeman.CountEnabledByLevels();
 
-    unsigned max_mn_count = 0u;
-
     for(auto& count : mn_counts)
-        max_mn_count = std::max(max_mn_count, count.second * 125 / 100);
-
-    if(max_mn_count > nCountNeeded)
-        max_mn_count = nCountNeeded;
+        count.second = std::min(nCountNeeded, count.second / 100 * 125);
 
     int nInvCount = 0;
 
@@ -649,7 +662,7 @@ void CMasternodePayments::Sync(CNode* node, int nCountNeeded)
 
         const auto& winner = vote.second;
 
-        bool push =  winner.nBlockHeight >= nHeight - max_mn_count
+        bool push =  winner.nBlockHeight >= nHeight - mn_counts[winner.payeeLevel]
                   && winner.nBlockHeight <= nHeight + 20;
 
         if(!push)

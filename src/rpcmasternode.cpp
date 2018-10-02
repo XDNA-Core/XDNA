@@ -15,7 +15,7 @@
 #include "rpcserver.h"
 #include "utilmoneystr.h"
 
-#include "univalue/include/univalue.h"
+#include <univalue.h>
 
 #include <boost/tokenizer.hpp>
 #include <fstream>
@@ -120,7 +120,7 @@ UniValue getpoolinfo(const UniValue& params, bool fHelp)
 
             "\nResult:\n"
             "{\n"
-            "  \"current\": \"addr\",  (string) XDNA address of current masternode\n"
+            "  \"current\": \"addr\",    (string) XDNA address of current masternode\n"
             "  \"state\": xxxx,        (string) unknown\n"
             "  \"entries\": xxxx,      (numeric) Number of entries\n"
             "  \"accepted\": xxxx,     (numeric) Number of entries accepted\n"
@@ -506,45 +506,33 @@ UniValue masternodecurrent (const UniValue& params, bool fHelp)
     if (fHelp || (params.size() != 0))
         throw runtime_error(
             "masternodecurrent\n"
-            "\nGet current masternode winners\n"
+            "\nGet current masternode winner\n"
 
             "\nResult:\n"
-            "[\n"
-            "  {\n"
-            "    \"level\": xxxx,         (numeric) MN level\n"
-            "    \"protocol\": xxxx,      (numeric) Protocol version\n"
-            "    \"txhash\": \"xxxx\",    (string)  Collateral transaction hash\n"
-            "    \"pubkey\": \"xxxx\",    (string)  MN Public key\n"
-            "    \"lastseen\": xxx,       (numeric) Time since epoch of last seen\n"
-            "    \"activeseconds\": xxx,  (numeric) Seconds MN has been active\n"
-            "  },\n"
-            "  ...\n"
-            "]\n"
+            "{\n"
+            "  \"protocol\": xxxx,        (numeric) Protocol version\n"
+            "  \"txhash\": \"xxxx\",      (string) Collateral transaction hash\n"
+            "  \"pubkey\": \"xxxx\",      (string) MN Public key\n"
+            "  \"lastseen\": xxx,       (numeric) Time since epoch of last seen\n"
+            "  \"activeseconds\": xxx,  (numeric) Seconds MN has been active\n"
+            "}\n"
             "\nExamples:\n" +
             HelpExampleCli("masternodecurrent", "") + HelpExampleRpc("masternodecurrent", ""));
 
-    UniValue result{UniValue::VARR};
-
-    for(unsigned l = CMasternode::LevelValue::MIN; l <= CMasternode::LevelValue::MAX; ++l) {
-
-        CMasternode* winner = mnodeman.GetCurrentMasterNode(l, 1);
-
-        if(!winner)
-            continue;
-
+    //fixme: GetCurrentMasterNode add MN level
+    CMasternode* winner = mnodeman.GetCurrentMasterNode(CMasternode::LevelValue::UNSPECIFIED, 1);
+    if (winner) {
         UniValue obj(UniValue::VOBJ);
 
-        obj.push_back(Pair("level", winner->Level()));
         obj.push_back(Pair("protocol", (int64_t)winner->protocolVersion));
         obj.push_back(Pair("txhash", winner->vin.prevout.hash.ToString()));
         obj.push_back(Pair("pubkey", CBitcoinAddress(winner->pubKeyCollateralAddress.GetID()).ToString()));
         obj.push_back(Pair("lastseen", (winner->lastPing == CMasternodePing()) ? winner->sigTime : (int64_t)winner->lastPing.sigTime));
         obj.push_back(Pair("activeseconds", (winner->lastPing == CMasternodePing()) ? 0 : (int64_t)(winner->lastPing.sigTime - winner->sigTime)));
-
-        result.push_back(obj);
+        return obj;
     }
 
-    return result;
+    throw runtime_error("unknown");
 }
 
 UniValue masternodedebug (const UniValue& params, bool fHelp)
