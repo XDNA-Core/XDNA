@@ -5,7 +5,7 @@ XDNA is a brand new digital currency that combines all the positive aspects of s
 The project brings tangible benefits not only to the digital world but also to the real one.
 
 
-More information at [xdna.io](http://www.xdna.io) Visit our ANN thread at [BitcoinTalk](https://bitcointalk.org/index.php?topic=4517612.0), join our group at [Discord] (https://discord.gg/S9adMgS).
+More information at [xdna.io](https://xdna.io) Visit our ANN thread at [BitcoinTalk](https://bitcointalk.org/index.php?topic=4517612.0), join our group at [Discord] (https://discord.gg/S9adMgS).
 
 ### Coin Specs
 
@@ -15,8 +15,7 @@ More information at [xdna.io](http://www.xdna.io) Visit our ANN thread at [Bitco
 <tr><td>POW phase duration</td><td>1440000 blocks</td></tr>
 <tr><td>PoW block reward</td><td>Dynamic from 4 to 511 XDNA</td></tr>
 <tr><td>Instamine protection</td><td>First 720 blocks</td></tr>
-<tr><td>Hashing algorithm from start</td><td>Keccak</td></tr>
-<tr><td>Hashing algorithm from 15.00 GMT 08 Aug 2018 </td><td>HEX</td></tr>
+<tr><td>Hashing algorithm</td><td>HEX</td></tr>
 <tr><td>Estimated XDNA supply during POW</td><td>138,000,000</td></tr>
 <tr><td>POS starting block</td><td>1440001</td></tr>
 <tr><td>POS phase duration</td><td>Unlimited</td></tr>
@@ -34,21 +33,21 @@ More information at [xdna.io](http://www.xdna.io) Visit our ANN thread at [Bitco
 ### Block reward
 
 <table>
-<tr><th>Level</th><th>Network hashrate (Th/s)</th><th>Block reward</th></tr>
-<tr><th>1</th><th>0</th><th>4</th></tr>
-<tr><th>2</th><th>2</th><th>5</th></tr>
-<tr><th>3</th><th>3</th><th>7</th></tr>
-<tr><th>4</th><th>5</th><th>9</th></tr>
-<tr><th>5</th><th>8</th><th>11</th></tr>
-<tr><th>6</th><th>13</th><th>15</th></tr>
-<tr><th>7</th><th>21</th><th>20</th></tr>
-<tr><th>8</th><th>34</th><th>27</th></tr>
-<tr><th>9</th><th>55</th><th>39</th></tr>
-<tr><th>10</th><th>89</th><th>57</th></tr>
-<tr><th>11</th><th>144</th><th>85</th></tr>
-<tr><th>12</th><th>233</th><th>131</th></tr>
-<tr><th>13</th><th>377</th><th>204</th></tr>
-<tr><th>14</th><th>610</th><th>321</th></tr>
-<tr><th>15</th><th>987</th><th>511</th></tr>
+<tr><th>Level</th><th>Network hashrate (Gh/s)</th><th>Block reward</th></tr>
+<tr><th>1</th><th>10</th><th>4</th></tr>
+<tr><th>2</th><th>20</th><th>5</th></tr>
+<tr><th>3</th><th>30</th><th>7</th></tr>
+<tr><th>4</th><th>50</th><th>10</th></tr>
+<tr><th>5</th><th>80</th><th>14</th></tr>
+<tr><th>6</th><th>130</th><th>19</th></tr>
+<tr><th>7</th><th>210</th><th>25</th></tr>
+<tr><th>8</th><th>340</th><th>32</th></tr>
+<tr><th>9</th><th>550</th><th>40</th></tr>
+<tr><th>10</th><th>890</th><th>49</th></tr>
+<tr><th>11</th><th>1.440</th><th>59</th></tr>
+<tr><th>12</th><th>2.330</th><th>70</th></tr>
+<tr><th>13</th><th>3.770</th><th>82</th></tr>
+<tr><th>14</th><th>6.100</th><th>95</th></tr>
+<tr><th>15</th><th>9.870</th><th>109</th></tr>
 </table>
 ![](doc/POW.png)

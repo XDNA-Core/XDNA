@@ -120,7 +120,7 @@ public:
     void Clear();
 
     unsigned CountEnabled(unsigned mnlevel = CMasternode::LevelValue::UNSPECIFIED, int protocolVersion = -1);
-    std::map<unsigned, int> CountEnabledByLevels(int protocolVersion = -1);
+    std::map<unsigned, unsigned> CountEnabledByLevels(int protocolVersion = -1);
 
     void CountNetworks(int protocolVersion, int& ipv4, int& ipv6, int& onion);
 

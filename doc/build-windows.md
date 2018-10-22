@@ -25,6 +25,7 @@ Acquire the source in the usual way:
     git clone https://github.com/XDNA-Core/XDNA.git
 
 To build executables for Windows 32-bit:
+
     cd XDNA
     PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
     cd depends
@@ -34,6 +35,7 @@ To build executables for Windows 32-bit:
     make
 
 To build executables for Windows 64-bit:
+
     cd XDNA
     PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
     cd depends

@@ -256,7 +256,7 @@ int64_t CMasternode::GetLastPaid()
     CBlockIndex* pindexPrev = chainActive.Tip();
 
     if (!pindexPrev)
-        return false;
+        return 0;
 
     CScript mnpayee;
     mnpayee = GetScriptForDestination(pubKeyCollateralAddress.GetID());
@@ -266,12 +266,12 @@ int64_t CMasternode::GetLastPaid()
     ss << sigTime;
     uint256 hash = ss.GetHash();
 
-    // use a deterministic offset to break a tie -- 2.5 minutes
-    int64_t nOffset = hash.GetCompact(false) % 150;
+    // use a deterministic offset to break a tie -- 1.5 minutes
+    int64_t nOffset = hash.GetCompact(false) % 90;
 
     const CBlockIndex* BlockReading = pindexPrev;
 
-    int nMnCount = mnodeman.CountEnabled(Level()) / 100 * 125;
+    int nMnCount = mnodeman.CountEnabled(Level()) * 125 / 100;
     int n = 0;
     for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
         if (n >= nMnCount) {
@@ -285,7 +285,7 @@ int64_t CMasternode::GetLastPaid()
                 to converge on the same payees quickly, then keep the same schedule.
             */
             if (masternodePayments.mapMasternodeBlocks[BlockReading->nHeight].HasPayeeWithVotes(mnpayee, 2)) {
-                return BlockReading->nTime + nOffset;
+                return BlockReading->nTime - nOffset;
             }
         }
 

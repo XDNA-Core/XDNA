@@ -332,9 +332,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet, 
                 }
             }
         }
+
         if (!fProofOfStake)
             UpdateTime(pblock, pindexPrev);
-        CAmount block_value = GetBlockValue(nHeight - 1, pblock->nTime);
+
+        CAmount block_value = GetBlockValue(nHeight, pblock->nTime);
 
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
@@ -356,7 +358,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet, 
             auto reward_out_idx = txReward.vout.size() - 1;
 
             // Masternode payments
-            auto mn_reward = masternodePayments.FillBlockPayee(txReward, block_value, fProofOfStake);
+            auto mn_reward = masternodePayments.FillBlockPayee(txReward, pblock->nTime, block_value, fProofOfStake);
 
             txReward.vout[reward_out_idx].nValue -= mn_reward;
 
@@ -389,7 +391,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet, 
         if (!TestBlockValidity(state, *pblock, pindexPrev, false, false)) {
             LogPrintf("CreateNewBlock() : TestBlockValidity failed\n");
             mempool.clear();
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -552,6 +554,7 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
         //
         // Search
         //
+
         int64_t nStart = GetTime();
         uint256 hashTarget = uint256().SetCompact(pblock->nBits);
         while (true) {

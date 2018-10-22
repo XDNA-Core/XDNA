@@ -1619,9 +1619,9 @@ double ConvertBitsToDouble(unsigned int nBits)
 
 CAmount GetBlockValue(int nHeight, uint32_t nTime)
 {
-    if (nHeight == 0) {
+    if (nHeight == 1) {
         return 971712 * COIN;
-    } else if (nHeight < Params().ANTI_INSTAMINE_TIME()) {
+    } else if (nHeight <= Params().ANTI_INSTAMINE_TIME()) {
         return 1 * COIN;
 
       // POS Year 1
@@ -1673,25 +1673,23 @@ CAmount GetBlockValue(int nHeight, uint32_t nTime)
 
     int64_t netHashRate = chainActive.GetNetworkHashPS(24, nHeight);
 
-    return Params().SubsidyValue(netHashRate, nTime);
+    return Params().SubsidyValue(netHashRate, nTime, nHeight);
 }
 
-int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
+int64_t GetMasternodePayment(int nHeight, uint32_t nTime, unsigned mnlevel, int64_t blockValue)
 {
     if (nHeight <= Params().StartMNPaymentsBlock())
         return 0;
 
-    switch(mnlevel)
-    {
-        case 1:
-            return blockValue / 100 * 3;
+    std::vector<unsigned> coeff;
 
-        case 2:
-            return blockValue / 100 * 9;
+    if(nTime <= Params().F2ActivationTime())
+        coeff = { 3,  9, 15 };
+    else
+        coeff = { 5, 15, 25 };
 
-        case 3:
-            return blockValue / 100 * 15;
-    }
+    if(mnlevel - 1 < coeff.size())
+        return blockValue / 100 * coeff[mnlevel - 1];
 
     return 0;
 }
@@ -2215,7 +2213,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs - 1), nTimeConnect * 0.000001);
 
     //PoW phase redistributed fees to miner. PoS stage destroys fees.
-    CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight, block.nTime);
+    CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight + 1, block.nTime);
     if (block.IsProofOfWork())
         nExpectedMint += nFees;
 
@@ -3133,7 +3131,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
     else {
             int nHeight = 0;
             CBlockIndex* pindexPrev = chainActive.Tip();
-            if (pindexPrev == NULL)
+            if (!pindexPrev)
                 nHeight = 0;
             else
                 if (pindexPrev->GetBlockHash() == block.hashPrevBlock)
@@ -3168,7 +3166,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
                 return state.DoS(100, error("CheckBlock() : coinbase do not have the dev or fund reward (vout)."),
                 REJECT_INVALID, "bad-cb-reward-missing");
 
-            CAmount block_value = GetBlockValue(nHeight - 1, block.nTime);
+            CAmount block_value = GetBlockValue(nHeight, block.nTime);
 
             if (block.vtx[0].vout[DevIndex].nValue < block_value * Params().GetDevFee() / 100 || block.vtx[0].vout[FoudIndex].nValue < block_value * Params().GetFundFee() / 100)
                 return state.DoS(100, error("CheckBlock() : coinbase do not have the enough reward for dev or fund."),
@@ -3607,7 +3605,7 @@ bool ProcessNewBlock(CValidationState& state, CNode* pfrom, CBlock* pblock, CDis
     if (!fLiteMode) {
         if (masternodeSync.RequestedMasternodeAssets > MASTERNODE_SYNC_LIST) {
             obfuScationPool.NewBlock();
-            masternodePayments.ProcessBlock(GetHeight() + 10);
+            masternodePayments.ProcessBlock(GetHeight());
         }
     }
 
@@ -5418,7 +5416,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
 int ActiveProtocol()
 {
-    if(Params().HEXHashActivationTime() < GetAdjustedTime())
+    if(Params().F2ActivationTime() < GetAdjustedTime())
         return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT;
 
 //    if (IsSporkActive(SPORK_X_NEW_PROTOCOL_ENFORCEMENT_X))

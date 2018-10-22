@@ -482,12 +482,12 @@
      </column>
      <column>
       <property name="text">
-       <string>Date</string>
+       <string>Rounds</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>Confirmations</string>
+       <string>Date</string>
       </property>
       <property name="toolTip">
        <string>Confirmed</string>
@@ -495,12 +495,12 @@
      </column>
      <column>
       <property name="text">
-       <string>Priority</string>
+       <string>Confirmations</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string/>
+       <string>Priority</string>
       </property>
      </column>
      <column>

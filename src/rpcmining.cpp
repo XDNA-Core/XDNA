@@ -441,12 +441,11 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     if (strMode != "template")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
-        if (vNodes.empty())
-                throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "XDNA is not connected!");
+    if (vNodes.empty())
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "XDNA is not connected!");
 
-        if (IsInitialBlockDownload())
-                throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "XDNA is downloading blocks...");
-
+    if (IsInitialBlockDownload())
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "XDNA is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
 
@@ -595,7 +594,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 
 
     UniValue superblockObjArray(UniValue::VARR);
-    if(pblock->vtx[0].vout.size() > 1) {
+    if(pblock->vtx[0].vout.size() > 1) { 
         for (const CTxOut& txout : pblock->vtx[0].vout) {
             if(txout == pblock->vtx[0].vout[0])
                 continue;

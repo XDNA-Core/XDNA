@@ -11,6 +11,7 @@
 #include "util.h"
 #include "utilstrencodings.h"
 
+#include <mutex>
 #include <assert.h>
 #include <limits>
 
@@ -56,12 +57,13 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
     boost::assign::map_list_of(0, uint256("000003b39d72ad4da1eb2ef2d044032dd95750cc25c435ecad2a236dd22b99fe"))
                               (50, uint256("000000224104db4572f767923cafd543f36b9a4d1eee117c4dc3e1961ca6371b"))
                               (60200, uint256("00000000000031ba24b923e1966fbe17ae0cdff1efa9d1efc556e2a3cafb5c55"))
-                              (134000, uint256("0000000000c08ddeef3b04f5ead225a8d5f4765756d32407b74da5ca9c708b80"));
+                              (134000, uint256("0000000000c08ddeef3b04f5ead225a8d5f4765756d32407b74da5ca9c708b80"))
+                              (165000, uint256("00000000010f679ac3889908996bed4716f33de4608eb48594fd36b65f03831b"));
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1538143032, // * UNIX timestamp of last checkpoint block
-    193164,      // * total number of transactions between genesis and last checkpoint
+    1540098739, // * UNIX timestamp of last checkpoint block
+    234944,      // * total number of transactions between genesis and last checkpoint
                 //   (the tx=... number in the SetBestChain debug.log lines)
     2000        // * estimated number of transactions per day after checkpoint
 };
@@ -82,16 +84,54 @@ static const Checkpoints::CCheckpointData dataRegtest = {
     0,
     100};
 
-CAmount CChainParams::SubsidyValue(SubsidySwitchPoints::key_type level, uint32_t nTime) const
+const CChainParams::SubsidySwitchPoints& CChainParams::GetSubsidySwitchPoints(uint32_t nTime, int nHeight) const
 {
-    const auto& points = (nTime <= nHEXHashTimestamp) ? subsidySwitchPoints : subsidySwitchPoints_HEXHash;
+    if(nTime <= nHEXHashTimestamp)
+       return subsidySwitchPoints;
+    else if(nTime <= nF2Timestamp)
+       return subsidySwitchPoints_HEXHash;
+    else if(nHeight < static_cast<int>(subsidyScheduleStart_F2))
+        return subsidySwitchPoints_HEXHash;
 
-    SubsidySwitchPoints::const_iterator point = points.upper_bound(level);
+    auto decrease_interval = std::min(subsidyDecreaseCount_F2, (nHeight - subsidyScheduleStart_F2) / subsidyDecreaseInterval_F2);
 
-    if(point != subsidySwitchPoints.begin())
+    return subsidySwitchPointsSchedule_F2.find(decrease_interval)->second;
+}
+
+CAmount CChainParams::SubsidyValue(SubsidySwitchPoints::key_type level, uint32_t nTime, int nHeight) const
+{
+    const auto& switch_points = GetSubsidySwitchPoints(nTime, nHeight);
+
+    SubsidySwitchPoints::const_iterator point = switch_points.upper_bound(level);
+
+    if(point != switch_points.begin())
         point = std::prev(point);
 
     return point->second;
+}
+
+void CChainParams::initSubsidySwitchPointsSchedule()
+{
+    subsidySwitchPointsSchedule_F2[0u] = subsidySwitchPoints_F2_0;
+
+    for(auto i = 1u; i <= subsidyDecreaseCount_F2; ++i)
+    {
+       subsidySwitchPointsSchedule_F2[i] = subsidySwitchPointsSchedule_F2[i - 1];
+
+       for(auto& sp : subsidySwitchPointsSchedule_F2[i])
+       {
+           auto prev_value = sp.second;
+
+           sp.second *= 10000u - subsidyDecreaseValue_F2;
+           sp.second /= 10000u;
+           sp.second += COIN / 10u - 1u;
+           sp.second /= COIN / 10u;
+           sp.second *= COIN / 10u;
+
+           if(sp.second == prev_value && sp.second > COIN / 10u)
+             sp.second -= COIN / 10u;
+       }
+    }
 }
 
 class CMainParams : public CChainParams
@@ -156,6 +196,32 @@ public:
             {9870 * 1e9, 109 * COIN},
         };
         assert(subsidySwitchPoints_HEXHash.size());
+
+        subsidySwitchPoints_F2_0 = {
+            {0         ,   38  * (COIN/10)},
+            {20   * 1e9,   47  * (COIN/10)},
+            {30   * 1e9,   66  * (COIN/10)},
+            {50   * 1e9,   94  * (COIN/10)},
+            {80   * 1e9,  131  * (COIN/10)},
+            {130  * 1e9,  177  * (COIN/10)},
+            {210  * 1e9,  233  * (COIN/10)},
+            {340  * 1e9,  298  * (COIN/10)},
+            {550  * 1e9,  373  * (COIN/10)},
+            {890  * 1e9,  456  * (COIN/10)},
+            {1440 * 1e9,  550  * (COIN/10)},
+            {2330 * 1e9,  652  * (COIN/10)},
+            {3770 * 1e9,  764  * (COIN/10)},
+            {6100 * 1e9,  885  * (COIN/10)},
+            {9870 * 1e9,  1015 * (COIN/10)},
+        };
+        assert(subsidySwitchPoints_F2_0.size());
+
+        subsidyScheduleStart_F2    = 177000; // block#XXXXXX ~= nF2Timestamp + 1 day
+        subsidyDecreaseInterval_F2 = 43200;  // 43200 bloks ~= 30 days
+        subsidyDecreaseCount_F2    = 23;     // 23
+        subsidyDecreaseValue_F2    = 694;    // 694 = 6,94% * 100
+
+        initSubsidySwitchPointsSchedule();
 
         nMaxReorganizationDepth = 100;
         nEnforceBlockUpgradeMajority = 750;
@@ -230,7 +296,8 @@ public:
         strObfuscationPoolDummyAddress = "X87q2gC9j6nNrnzCsg4aY6bHMLsT9nUhEw";
         nStartMasternodePayments = 1403728576; //Wed, 25 Jun 2014 20:36:16 GMT
 
-        nHEXHashTimestamp = 1533567600; // 6 August 2018 г., 15:00:00 GMT+00:00
+        nHEXHashTimestamp = 1533567600; // 6  August  2018, 15:00:00 GMT+00:00
+        nF2Timestamp      = 1540728000; // 28 October 2018, 12:00:00 GMT+00:00
     }
 
     const Checkpoints::CCheckpointData& Checkpoints() const
