@@ -34,20 +34,20 @@ More information at [xdna.io](https://xdna.io) Visit our ANN thread at [BitcoinT
 
 <table>
 <tr><th>Level</th><th>Network hashrate (Gh/s)</th><th>Block reward</th></tr>
-<tr><th>1</th><th>10</th><th>4</th></tr>
-<tr><th>2</th><th>20</th><th>5</th></tr>
-<tr><th>3</th><th>30</th><th>7</th></tr>
-<tr><th>4</th><th>50</th><th>10</th></tr>
-<tr><th>5</th><th>80</th><th>14</th></tr>
-<tr><th>6</th><th>130</th><th>19</th></tr>
-<tr><th>7</th><th>210</th><th>25</th></tr>
-<tr><th>8</th><th>340</th><th>32</th></tr>
-<tr><th>9</th><th>550</th><th>40</th></tr>
-<tr><th>10</th><th>890</th><th>49</th></tr>
-<tr><th>11</th><th>1.440</th><th>59</th></tr>
-<tr><th>12</th><th>2.330</th><th>70</th></tr>
-<tr><th>13</th><th>3.770</th><th>82</th></tr>
-<tr><th>14</th><th>6.100</th><th>95</th></tr>
-<tr><th>15</th><th>9.870</th><th>109</th></tr>
+<tr><th>1</th><th>10</th><th>3.6</th></tr>
+<tr><th>2</th><th>20</th><th>4.4</th></tr>
+<tr><th>3</th><th>30</th><th>6.2</th></tr>
+<tr><th>4</th><th>50</th><th>8.8</th></tr>
+<tr><th>5</th><th>80</th><th>12.2</th></tr>
+<tr><th>6</th><th>130</th><th>16.5</th></tr>
+<tr><th>7</th><th>210</th><th>21.7</th></tr>
+<tr><th>8</th><th>340</th><th>27.8</th></tr>
+<tr><th>9</th><th>550</th><th>34.8</th></tr>
+<tr><th>10</th><th>890</th><th>42.5</th></tr>
+<tr><th>11</th><th>1.440</th><th>51.2</th></tr>
+<tr><th>12</th><th>2.330</th><th>60.7</th></tr>
+<tr><th>13</th><th>3.770</th><th>71.1</th></tr>
+<tr><th>14</th><th>6.100</th><th>82.4</th></tr>
+<tr><th>15</th><th>9.870</th><th>94.5</th></tr>
 </table>
 ![](doc/POW.png)
