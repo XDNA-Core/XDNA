@@ -13,7 +13,7 @@ More information at [xdna.io](https://xdna.io) Visit our ANN thread at [BitcoinT
 <tr><td>Name & ticker</td><td>XDNA</td></tr>
 <tr><td>Consensus algorithm</td><td>PoW/POS</td></tr>
 <tr><td>POW phase duration</td><td>1440000 blocks</td></tr>
-<tr><td>PoW block reward</td><td>Dynamic from 4 to 511 XDNA</td></tr>
+<tr><td>PoW block reward</td><td>Dynamic from 4 to 109 coins with lowering by 6.94% each month</td></tr>
 <tr><td>Instamine protection</td><td>First 720 blocks</td></tr>
 <tr><td>Hashing algorithm</td><td>HEX</td></tr>
 <tr><td>Estimated XDNA supply during POW</td><td>138,000,000</td></tr>
@@ -50,4 +50,4 @@ More information at [xdna.io](https://xdna.io) Visit our ANN thread at [BitcoinT
 <tr><th>14</th><th>6.100</th><th>82.4</th></tr>
 <tr><th>15</th><th>9.870</th><th>94.5</th></tr>
 </table>
-![](doc/POW.png)
+![](https://github.com/XDNA-Core/XDNA/blob/master/doc/POW.png)
