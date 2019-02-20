@@ -195,7 +195,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos* dbp = NULL);
 /** Initialize a new block tree database + block data on disk */
 bool InitBlockIndex();
 /** Load the block tree and coins database from disk */
-bool LoadBlockIndex(std::string& strError);
+bool LoadBlockIndex();
 /** Unload database information */
 void UnloadBlockIndex();
 /** See whether the protocol update is enforced for connected nodes */
@@ -230,7 +230,7 @@ bool DisconnectBlocksAndReprocess(int blocks);
 double ConvertBitsToDouble(unsigned int nBits);
 int64_t GetMasternodePayment(int nHeight, uint32_t nTime, unsigned mnlevel, int64_t blockValue);
 
-bool ActivateBestChain(CValidationState& state, CBlock* pblock = NULL, bool fAlreadyChecked = false);
+bool ActivateBestChain(CValidationState& state, CBlock* pblock = NULL);
 CAmount GetBlockValue(int nHeight, uint32_t nTime);
 
 /** Create a new block index entry for a given block hash */
@@ -431,7 +431,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
 bool DisconnectBlocksAndReprocess(int blocks);
 
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins */
-bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins, bool fJustCheck, bool fAlreadyChecked = false);
+bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins, bool fJustCheck = false);
 
 /** Context-independent validity checks */
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW = true);
@@ -446,7 +446,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
 bool TestBlockValidity(CValidationState& state, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 
 /** Store block on disk. If dbp is provided, the file is known to already reside on disk */
-bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** pindex, CDiskBlockPos* dbp = NULL, bool fAlreadyCheckedBlock = false);
+bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** pindex, CDiskBlockPos* dbp = NULL);
 bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex** ppindex = NULL);
 
 
