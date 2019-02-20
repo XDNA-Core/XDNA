@@ -492,7 +492,7 @@ public:
     CBlockIndex* Tip(bool fProofOfStake = false) const
     {
         if (vChain.size() < 1)
-            return NULL;
+            return nullptr;
 
         CBlockIndex* pindex = vChain[vChain.size() - 1];
 

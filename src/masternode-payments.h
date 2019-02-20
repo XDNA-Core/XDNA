@@ -248,7 +248,7 @@ public:
     int GetMinMasternodePaymentsProto();
     void ProcessMessageMasternodePayments(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);
     std::string GetRequiredPaymentsString(int nBlockHeight);
-    CAmount FillBlockPayee(CMutableTransaction& txNew, int64_t block_value, bool fProofOfStake);
+    CAmount FillBlockPayee(CMutableTransaction& txNew, uint32_t nTime, int64_t block_value, bool fProofOfStake);
     std::string ToString() const;
 
     ADD_SERIALIZE_METHODS;

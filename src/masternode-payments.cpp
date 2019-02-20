@@ -28,18 +28,18 @@ CCriticalSection cs_mapMasternodePayeeVotes;
 bool IsBlockValueValid(const CBlock& block, CAmount nExpectedValue, CAmount nMinted)
 {
     CBlockIndex* pindexPrev = chainActive.Tip();
-    if (pindexPrev == NULL) return true;
+    if (!pindexPrev) return true;
 
     int nHeight = 0;
     if (pindexPrev->GetBlockHash() == block.hashPrevBlock) {
         nHeight = pindexPrev->nHeight + 1;
     } else { //out of order
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
-        if (mi != mapBlockIndex.end() && (*mi).second)
-            nHeight = (*mi).second->nHeight + 1;
+        if (mi != mapBlockIndex.end() && mi->second)
+            nHeight = mi->second->nHeight + 1;
     }
 
-    if (nHeight == 0) {
+    if (!nHeight) {
         LogPrintf("IsBlockValueValid() : WARNING: Couldn't find previous block\n");
     }
 
@@ -56,6 +56,10 @@ bool IsBlockPayeeValid(const CBlock& block, int nBlockHeight)
         LogPrint("mnpayments", "Client not synced, skipping block payee checks\n");
         return true;
     }
+
+    // disable mn payments checks till fork activation
+    if(Params().F2ActivationTime() <= block.nTime)
+        return true;
 
     const CTransaction& txNew = (nBlockHeight > Params().LAST_POW_BLOCK() ? block.vtx[1] : block.vtx[0]);
 
@@ -78,7 +82,7 @@ std::string GetRequiredPaymentsString(int nBlockHeight)
     return masternodePayments.GetRequiredPaymentsString(nBlockHeight);
 }
 
-CAmount CMasternodePayments::FillBlockPayee(CMutableTransaction& txNew, CAmount block_value, bool fProofOfStake)
+CAmount CMasternodePayments::FillBlockPayee(CMutableTransaction& txNew, uint32_t nTime, CAmount block_value, bool fProofOfStake)
 {
     CBlockIndex* pindexPrev = chainActive.Tip();
 
@@ -102,7 +106,7 @@ CAmount CMasternodePayments::FillBlockPayee(CMutableTransaction& txNew, CAmount 
             payee = GetScriptForDestination(winningNode->pubKeyCollateralAddress.GetID());
         }
 
-        CAmount masternodePayment = GetMasternodePayment(pindexPrev->nHeight, mnlevel, block_value);
+        CAmount masternodePayment = GetMasternodePayment(pindexPrev->nHeight, nTime, mnlevel, block_value);
 
         if(!masternodePayment)
             continue;
@@ -353,7 +357,7 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew, uint3
         if(payee.nVotes < MNPAYMENTS_SIGNATURES_REQUIRED)
             continue;
 
-        auto requiredMasternodePayment = GetMasternodePayment(nBlockHeight, payee.mnlevel, nReward);
+        auto requiredMasternodePayment = GetMasternodePayment(nBlockHeight, nTime, payee.mnlevel, nReward);
 
         auto payee_out = std::find_if(txNew.vout.cbegin(), txNew.vout.cend(), [&payee, &requiredMasternodePayment](const CTxOut& out){
 

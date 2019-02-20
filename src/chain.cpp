@@ -13,6 +13,8 @@ using namespace std;
 
 int64_t CChain::GetNetworkHashPS(int lookup, int height)
 {
+    --height;
+
     CBlockIndex *pb = this->Tip();
 
     if (height >= 0 && height < this->Height())

@@ -78,7 +78,7 @@ public:
         painter->setPen(foreground);
         QRect boundingRect;
         painter->drawText(addressRect, Qt::AlignLeft | Qt::AlignVCenter, address, &boundingRect);
-     
+
         if (amount < 0) {
             foreground = COLOR_NEGATIVE;
         } else if (!confirmed) {
@@ -160,7 +160,7 @@ OverviewPage::OverviewPage(QWidget* parent) : QWidget(parent),
     //information block update
     timerinfo_mn = new QTimer(this);
     connect(timerinfo_mn, SIGNAL(timeout()), this, SLOT(updateMasternodeInfo()));
-    timerinfo_mn->start(1000); 
+    timerinfo_mn->start(1000);
 
     timerinfo_blockchain = new QTimer(this);
     connect(timerinfo_blockchain, SIGNAL(timeout()), this, SLOT(updatBlockChainInfo()));
@@ -279,7 +279,7 @@ void OverviewPage::setWalletModel(WalletModel* model)
         connect(ui->toggleObfuscation, SIGNAL(clicked()), this, SLOT(toggleObfuscation()));
         connect(model, SIGNAL(notifyWatchonlyChanged(bool)), this, SLOT(updateWatchOnlyLabels(bool)));
         connect(ui->blabel_XDNA, SIGNAL(clicked()), this, SLOT(openMyAddresses()));
-       
+
     }
 
     // update the display unit, to not use the default ("XDNA")
@@ -312,8 +312,8 @@ void OverviewPage::updateMasternodeInfo()
 {
   if (masternodeSync.IsBlockchainSynced() && masternodeSync.IsSynced())
   {
-  
-   int mn1=0;   
+
+   int mn1=0;
    int mn2=0;
    int mn3=0;
    int totalmn=0;
@@ -329,11 +329,11 @@ void OverviewPage::updateMasternodeInfo()
            case 3:
            mn3++;break;
        }
- 
+
     }
     totalmn=mn1+mn2+mn3;
     ui->labelMnTotal_Value->setText(QString::number(totalmn));
-    
+
     ui->graphMN1->setMaximum(totalmn);
     ui->graphMN2->setMaximum(totalmn);
     ui->graphMN3->setMaximum(totalmn);
@@ -342,8 +342,8 @@ void OverviewPage::updateMasternodeInfo()
     ui->graphMN3->setValue(mn3);
 
     if(timerinfo_mn->interval() == 1000)
-           timerinfo_mn->setInterval(180000); 
-  }  
+           timerinfo_mn->setInterval(180000);
+  }
 }
 
 void OverviewPage::updatBlockChainInfo()
@@ -354,16 +354,16 @@ void OverviewPage::updatBlockChainInfo()
     uint32_t tip_time = chainActive.Tip()->GetBlockTime();
 
     int CurrentBlock = chainActive.Height();
-    int64_t netHashRate = chainActive.GetNetworkHashPS(24, CurrentBlock-1);
-    int64_t BlockReward = Params().SubsidyValue(netHashRate, tip_time);
-    double BlockRewardXDNA =  static_cast<double>(BlockReward/COIN);
+    int64_t netHashRate = chainActive.GetNetworkHashPS(24, CurrentBlock);
+    int64_t BlockReward = Params().SubsidyValue(netHashRate, tip_time, CurrentBlock);
+    double BlockRewardXDNA =  static_cast<double>(BlockReward)/static_cast<double>(COIN);
     //int64_t XDNASupply = chainActive.Tip()->nMoneySupply / COIN;
 
     ui->label_CurrentBlock_value->setText(QString::number(CurrentBlock));
 
     int BitGunLevel = 0;
 
-    for(const auto& it : Params().GetSubsidySwitchPoints(tip_time))
+    for(const auto& it : Params().GetSubsidySwitchPoints(tip_time, CurrentBlock))
     {
         BitGunLevel++;
 

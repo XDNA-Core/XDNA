@@ -248,7 +248,7 @@ ToolsPage::ToolsPage(QWidget* parent) : QWidget(parent),
     connect(ui->btn_zapwallettxes1, SIGNAL(clicked()), this, SLOT(walletZaptxes1()));
     connect(ui->btn_zapwallettxes2, SIGNAL(clicked()), this, SLOT(walletZaptxes2()));
     connect(ui->btn_upgradewallet, SIGNAL(clicked()), this, SLOT(walletUpgrade()));
-    connect(ui->btn_reindex, SIGNAL(clicked()), this, SLOT(walletReindex()));    
+    connect(ui->btn_reindex, SIGNAL(clicked()), this, SLOT(walletReindex()));
 
     // set library version labels
     ui->openSSLVersion->setText(SSLeay_version(SSLEAY_VERSION));
@@ -359,7 +359,7 @@ void ToolsPage::setClientModel(ClientModel* model)
         connect(model->getPeerTableModel(), SIGNAL(layoutChanged()), this, SLOT(peerLayoutChanged()));
 
         // Provide initial values
-        ui->clientVersion->setText(model->formatFullVersion());
+        ui->clientVersion->setText("1.3.0.1");
         ui->clientName->setText(model->clientName());
         ui->buildDate->setText(model->formatBuildDate());
         ui->startupTime->setText(model->formatClientStartupTime());
@@ -492,7 +492,7 @@ void ToolsPage::clear()
 
 void ToolsPage::reject()
 {
-  
+
 }
 
 void ToolsPage::message(int category, const QString& message, bool html)
