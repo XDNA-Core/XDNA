@@ -233,6 +233,8 @@ void TransactionRecord::updateStatus(const CWalletTx& wtx)
     if (mi != mapBlockIndex.end())
         pindex = (*mi).second;
 
+    int CurrentBlock = (int)chainActive.Height();
+
     // Sort order, unrecorded transactions sort to the top
     status.sortKey = strprintf("%010d-%01d-%010u-%03d",
         (pindex ? pindex->nHeight : std::numeric_limits<int>::max()),
@@ -241,13 +243,13 @@ void TransactionRecord::updateStatus(const CWalletTx& wtx)
         idx);
     status.countsForBalance = wtx.IsTrusted() && !(wtx.GetBlocksToMaturity() > 0);
     status.depth = wtx.GetDepthInMainChain();
-    status.cur_num_blocks = chainActive.Height();
+    status.cur_num_blocks = CurrentBlock;
     status.cur_num_ix_locks = nCompleteTXLocks;
 
-    if (!IsFinalTx(wtx, chainActive.Height() + 1)) {
+    if (!IsFinalTx(wtx, CurrentBlock + 1)) {
         if (wtx.nLockTime < LOCKTIME_THRESHOLD) {
             status.status = TransactionStatus::OpenUntilBlock;
-            status.open_for = wtx.nLockTime - chainActive.Height();
+            status.open_for = wtx.nLockTime - CurrentBlock;
         } else {
             status.status = TransactionStatus::OpenUntilDate;
             status.open_for = wtx.nLockTime;

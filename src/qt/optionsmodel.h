@@ -41,6 +41,7 @@ public:
         ThirdPartyTxUrls,    // QString
         Digits,              // QString
         Theme,               // QString
+        ToolbarPosition,     // QString
         Language,            // QString
         CoinControlFeatures, // bool
         ThreadsScriptVerif,  // int
@@ -50,6 +51,10 @@ public:
         AnonymizeXDnaAmount, //int
         ShowMasternodesTab,  // bool
         Listen,              // bool
+        StakeSplitThreshold, // int
+        AutoCombineRewards,  // int
+        AutoCombine,         // bool
+        AutoCombineLimit,    // int
         OptionIDRowCount,
     };
 

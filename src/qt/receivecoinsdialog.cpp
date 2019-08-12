@@ -27,6 +27,11 @@ ReceiveCoinsDialog::ReceiveCoinsDialog(QWidget* parent) : QDialog(parent),
 {
     ui->setupUi(this);
 
+    ui->receiveButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/receiving_addresses")));
+    ui->clearButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/remove")));
+    ui->showRequestButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/edit")));
+    ui->removeRequestButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/remove")));
+
 #ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
     ui->clearButton->setIcon(QIcon());
     ui->receiveButton->setIcon(QIcon());
@@ -35,18 +40,21 @@ ReceiveCoinsDialog::ReceiveCoinsDialog(QWidget* parent) : QDialog(parent),
 #endif
 
     // context menu actions
+    QAction* copyAddressAction = new QAction(tr("Copy address"), this);
     QAction* copyLabelAction = new QAction(tr("Copy label"), this);
     QAction* copyMessageAction = new QAction(tr("Copy message"), this);
     QAction* copyAmountAction = new QAction(tr("Copy amount"), this);
 
     // context menu
     contextMenu = new QMenu();
+    contextMenu->addAction(copyAddressAction);
     contextMenu->addAction(copyLabelAction);
     contextMenu->addAction(copyMessageAction);
     contextMenu->addAction(copyAmountAction);
 
     // context menu signals
     connect(ui->recentRequestsView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showMenu(QPoint)));
+    connect(copyAddressAction, SIGNAL(triggered()), this, SLOT(copyAddress()));
     connect(copyLabelAction, SIGNAL(triggered()), this, SLOT(copyLabel()));
     connect(copyMessageAction, SIGNAL(triggered()), this, SLOT(copyMessage()));
     connect(copyAmountAction, SIGNAL(triggered()), this, SLOT(copyAmount()));
@@ -73,12 +81,21 @@ void ReceiveCoinsDialog::setModel(WalletModel* model)
         tableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
         tableView->setColumnWidth(RecentRequestsTableModel::Date, DATE_COLUMN_WIDTH);
         tableView->setColumnWidth(RecentRequestsTableModel::Label, LABEL_COLUMN_WIDTH);
+        tableView->setColumnWidth(RecentRequestsTableModel::Address, ADDRESS_COLUMN_WIDTH);
+        tableView->setColumnWidth(RecentRequestsTableModel::Balance, BALANCE_COLUMN_WIDTH);
+        tableView->setColumnWidth(RecentRequestsTableModel::Amount, AMOUNT_MINIMUM_COLUMN_WIDTH);
 
         connect(tableView->selectionModel(),
             SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this,
             SLOT(recentRequestsView_selectionChanged(QItemSelection, QItemSelection)));
         // Last 2 columns are set by the columnResizingFixer, when the table geometry is ready.
         columnResizingFixer = new GUIUtil::TableViewLastColumnResizingFixer(tableView, AMOUNT_MINIMUM_COLUMN_WIDTH, DATE_COLUMN_WIDTH);
+        /*
+        columnResizingFixer->resizeColumn(RecentRequestsTableModel::Date, DATE_COLUMN_WIDTH);
+        columnResizingFixer->resizeColumn(RecentRequestsTableModel::Address, ADDRESS_COLUMN_WIDTH);
+        columnResizingFixer->resizeColumn(RecentRequestsTableModel::Label, LABEL_COLUMN_WIDTH);
+        columnResizingFixer->resizeColumn(RecentRequestsTableModel::Balance, BALANCE_COLUMN_WIDTH);
+        */
     }
 }
 
@@ -235,6 +252,12 @@ void ReceiveCoinsDialog::showMenu(const QPoint& point)
     if (selection.empty())
         return;
     contextMenu->exec(QCursor::pos());
+}
+
+// context menu action: copy address
+void ReceiveCoinsDialog::copyAddress()
+{
+    copyColumnToClipboard(RecentRequestsTableModel::Address);
 }
 
 // context menu action: copy label

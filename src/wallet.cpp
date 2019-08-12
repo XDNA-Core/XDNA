@@ -3309,8 +3309,14 @@ void CWallet::AutoCombineDust()
         CCoinControl* coinControl = new CCoinControl();
         CAmount nTotalRewardsValue = 0;
         BOOST_FOREACH (const COutput& out, vCoins) {
+            int txDepth = out.tx->GetDepthInMainChain();
+
             //no coins should get this far if they dont have proper maturity, this is double checking
-            if (out.tx->IsCoinStake() && out.tx->GetDepthInMainChain() < COINBASE_MATURITY + 1)
+            if (out.tx->IsCoinStake() && txDepth < COINBASE_MATURITY + 1)
+                continue;
+
+            // skip inputs over autocombine confirmations limit
+            if (nAutoCombineLimit > 0 && txDepth > nAutoCombineLimit)
                 continue;
 
             if (out.Value() > nAutoCombineThreshold * COIN)
@@ -3320,10 +3326,17 @@ void CWallet::AutoCombineDust()
             coinControl->Select(outpt);
             vRewardCoins.push_back(out);
             nTotalRewardsValue += out.Value();
+            //if threshold taken stop combine inputs
+            if (nTotalRewardsValue >= nAutoCombineThreshold * COIN)
+                break;
         }
 
         //if no inputs found then return
         if (!coinControl->HasSelected())
+            continue;
+
+        //if inputs values lower threshold return, prevent small tx spam
+        if (nTotalRewardsValue < nAutoCombineThreshold * COIN)
             continue;
 
         //we cannot combine one coin with itself
@@ -3345,7 +3358,7 @@ void CWallet::AutoCombineDust()
         CreateTransaction(vecSend, wtxdummy, keyChange, nFeeRet, strErr, coinControl, ALL_COINS, false, CAmount(0));
         vecSend[0].second = nTotalRewardsValue - nFeeRet - 500;
 
-        if (!CreateTransaction(vecSend, wtx, keyChange, nFeeRet, strErr, coinControl, ALL_COINS, false, CAmount(0))) {
+        if (!CreateTransaction(vecSend, wtx, keyChange, nFeeRet, strErr, coinControl, ALL_COINS, false, nFeeRet + 500)) {
             LogPrintf("AutoCombineDust createtransaction failed, reason: %s\n", strErr);
             continue;
         }

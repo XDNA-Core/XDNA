@@ -209,6 +209,7 @@ public:
     //Auto Combine Inputs
     bool fCombineDust;
     CAmount nAutoCombineThreshold;
+    int nAutoCombineLimit;
 
     CWallet()
     {
@@ -243,8 +244,8 @@ public:
 
         // Stake Settings
         nHashDrift = 45;
-        nStakeSplitThreshold = 2000;
-        nHashInterval = 22;
+        nStakeSplitThreshold = 500;
+        nHashInterval = 35;
         nStakeSetUpdateTime = 300; // 5 minutes
 
         //MultiSend
@@ -259,6 +260,7 @@ public:
         //Auto Combine Dust
         fCombineDust = false;
         nAutoCombineThreshold = 0;
+        nAutoCombineLimit = 0;
     }
 
     bool isMultiSendEnabled()

@@ -137,6 +137,7 @@ private:
     QMenu* trayIconMenu;
     Notificator* notificator;
     RPCConsole* rpcConsole;
+    BlockExplorer* explorerWindow;
 
     /** Keep track of previous number of blocks, to detect progress */
     int prevBlocks;
@@ -208,8 +209,6 @@ private slots:
     void gotoOverviewPage();
     /** Switch to history (transactions) page */
     void gotoHistoryPage();
-    /** Switch to Explorer Page */
-    void gotoBlockExplorerPage();
     /** Switch to masternode page */
     void gotoMasternodePage();
     /** Switch to tools page */

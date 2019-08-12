@@ -48,6 +48,14 @@
         <file alias="staking_inactive">res/icons/staking_inactive.png</file>
         <file alias="tools">res/icons/tools.png</file>
         <file alias="blockexplorer">res/icons/blockexplorer.png</file>
+        <file alias="facebook">res/icons/icon_facebook.png</file>
+        <file alias="twitter">res/icons/icon_twitter.png</file>
+        <file alias="telegram">res/icons/icon_telegram.png</file>
+        <file alias="discord">res/icons/icon_discord.png</file>
+        <file alias="website">res/icons/icon_www.png</file>
+        <file alias="explorer">res/icons/icon_explorer.png</file>
+        <file alias="reddit">res/icons/icon_reddit.png</file>
+        <file alias="medium">res/icons/icon_medium.png</file>
     </qresource>
     <qresource prefix="/css">
         <file alias="default">res/css/default.css</file>

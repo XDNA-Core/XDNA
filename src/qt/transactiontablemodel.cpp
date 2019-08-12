@@ -168,24 +168,18 @@ public:
         if (idx >= 0 && idx < cachedWallet.size()) {
             TransactionRecord* rec = &cachedWallet[idx];
 
-            // Get required locks upfront. This avoids the GUI from getting
-            // stuck if the core is holding the locks for a longer time - for
-            // example, during a wallet rescan.
-            //
             // If a status update is needed (blocks came in since last check),
             //  update the status of this transaction from the wallet. Otherwise,
             // simply re-use the cached status.
-            TRY_LOCK(cs_main, lockMain);
-            if (lockMain) {
-                TRY_LOCK(wallet->cs_wallet, lockWallet);
-                if (lockWallet && rec->statusUpdateNeeded()) {
-                    std::map<uint256, CWalletTx>::iterator mi = wallet->mapWallet.find(rec->hash);
-
-                    if (mi != wallet->mapWallet.end()) {
-                        rec->updateStatus(mi->second);
+            if (rec->statusUpdateNeeded()) {
+                    TRY_LOCK(wallet->cs_wallet, lockWallet);
+                    if (lockWallet) {
+                        std::map<uint256, CWalletTx>::iterator mi = wallet->mapWallet.find(rec->hash);
+                        if (mi != wallet->mapWallet.end())
+                            rec->updateStatus(mi->second);
                     }
-                }
             }
+
             return rec;
         }
         return 0;
@@ -367,16 +361,16 @@ QVariant TransactionTableModel::txAddressDecoration(const TransactionRecord* wtx
     case TransactionRecord::Generated:
     case TransactionRecord::StakeMint:
     case TransactionRecord::MNReward:
-        return QIcon(":/icons/tx_mined");
+        return QIcon(GUIUtil::getThemeImage(":/icons/tx_mined"));
     case TransactionRecord::RecvWithObfuscation:
     case TransactionRecord::RecvWithAddress:
     case TransactionRecord::RecvFromOther:
-        return QIcon(":/icons/tx_input");
+        return QIcon(GUIUtil::getThemeImage(":/icons/tx_input"));
     case TransactionRecord::SendToAddress:
     case TransactionRecord::SendToOther:
-        return QIcon(":/icons/tx_output");
+        return QIcon(GUIUtil::getThemeImage(":/icons/tx_output"));
     default:
-        return QIcon(":/icons/tx_inout");
+        return QIcon(GUIUtil::getThemeImage(":/icons/tx_inout"));
     }
 }
 
@@ -449,32 +443,32 @@ QVariant TransactionTableModel::txStatusDecoration(const TransactionRecord* wtx)
     case TransactionStatus::Offline:
         return COLOR_TX_STATUS_OFFLINE;
     case TransactionStatus::Unconfirmed:
-        return QIcon(":/icons/transaction_0");
+        return QIcon(GUIUtil::getThemeImage(":/icons/transaction_0"));
     case TransactionStatus::Confirming:
         switch (wtx->status.depth) {
         case 1:
-            return QIcon(":/icons/transaction_1");
+            return QIcon(GUIUtil::getThemeImage(":/icons/transaction_1"));
         case 2:
-            return QIcon(":/icons/transaction_2");
+            return QIcon(GUIUtil::getThemeImage(":/icons/transaction_2"));
         case 3:
-            return QIcon(":/icons/transaction_3");
+            return QIcon(GUIUtil::getThemeImage(":/icons/transaction_3"));
         case 4:
-            return QIcon(":/icons/transaction_4");
+            return QIcon(GUIUtil::getThemeImage(":/icons/transaction_4"));
         default:
-            return QIcon(":/icons/transaction_5");
+            return QIcon(GUIUtil::getThemeImage(":/icons/transaction_5"));
         };
     case TransactionStatus::Confirmed:
-        return QIcon(":/icons/transaction_confirmed");
+        return QIcon(GUIUtil::getThemeImage(":/icons/transaction_confirmed"));
     case TransactionStatus::Conflicted:
-        return QIcon(":/icons/transaction_conflicted");
+        return QIcon(GUIUtil::getThemeImage(":/icons/transaction_conflicted"));
     case TransactionStatus::Immature: {
         int total = wtx->status.depth + wtx->status.matures_in;
         int part = (wtx->status.depth * 4 / total) + 1;
-        return QIcon(QString(":/icons/transaction_%1").arg(part));
+        return QIcon(GUIUtil::getThemeImage(QString(":/icons/transaction_%1").arg(part)));
     }
     case TransactionStatus::MaturesWarning:
     case TransactionStatus::NotAccepted:
-        return QIcon(":/icons/transaction_0");
+        return QIcon(GUIUtil::getThemeImage(":/icons/transaction_0"));
     default:
         return COLOR_BLACK;
     }
@@ -483,7 +477,7 @@ QVariant TransactionTableModel::txStatusDecoration(const TransactionRecord* wtx)
 QVariant TransactionTableModel::txWatchonlyDecoration(const TransactionRecord* wtx) const
 {
     if (wtx->involvesWatchAddress)
-        return QIcon(":/icons/eye");
+        return QIcon(GUIUtil::getThemeImage(":/icons/eye"));
     else
         return QVariant();
 }

@@ -5,6 +5,7 @@
 #include "networkstyle.h"
 
 #include "guiconstants.h"
+#include "guiutil.h"
 
 #include <QApplication>
 
@@ -34,9 +35,9 @@ const NetworkStyle* NetworkStyle::instantiate(const QString& networkId)
         if (networkId == network_styles[x].networkId) {
             return new NetworkStyle(
                 network_styles[x].appName,
-                network_styles[x].appIcon,
+                GUIUtil::getThemeImage(network_styles[x].appIcon),
                 network_styles[x].titleAddText,
-                network_styles[x].splashImage);
+                GUIUtil::getThemeImage(network_styles[x].splashImage));
         }
     }
     return 0;

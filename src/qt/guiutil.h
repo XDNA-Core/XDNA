@@ -19,6 +19,10 @@
 #include <QTableView>
 #include <QTableWidget>
 
+#include <QLayout>
+#include <QRect>
+#include <QStyle>
+
 #include <boost/filesystem.hpp>
 
 class QValidatedLineEdit;
@@ -204,6 +208,8 @@ QString loadStyleSheet();
 /** Check whether a theme is not build-in */
 bool isExternal(QString theme);
 
+QString getThemeImage(QString image);
+
 /* Convert QString to OS specific boost path through UTF-8 */
 boost::filesystem::path qstringToBoostPath(const QString& path);
 
@@ -235,5 +241,38 @@ typedef QProgressBar ProgressBar;
 #endif
 
 } // namespace GUIUtil
+
+#ifndef FLOWLAYOUT_H
+#define FLOWLAYOUT_H
+
+class FlowLayout : public QLayout
+{
+public:
+    explicit FlowLayout(QWidget *parent, int margin = -1, int hSpacing = -1, int vSpacing = -1);
+    explicit FlowLayout(int margin = -1, int hSpacing = -1, int vSpacing = -1);
+    ~FlowLayout();
+
+    void addItem(QLayoutItem *item) override;
+    int horizontalSpacing() const;
+    int verticalSpacing() const;
+    Qt::Orientations expandingDirections() const override;
+    bool hasHeightForWidth() const override;
+    int heightForWidth(int) const override;
+    int count() const override;
+    QLayoutItem *itemAt(int index) const override;
+    QSize minimumSize() const override;
+    void setGeometry(const QRect &rect) override;
+    QSize sizeHint() const override;
+    QLayoutItem *takeAt(int index) override;
+
+private:
+    int doLayout(const QRect &rect, bool testOnly) const;
+    int smartSpacing(QStyle::PixelMetric pm) const;
+
+    QList<QLayoutItem *> itemList;
+    int m_hSpace;
+    int m_vSpace;
+};
+#endif // FLOWLAYOUT_H
 
 #endif // BITCOIN_QT_GUIUTIL_H

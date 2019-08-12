@@ -110,6 +110,7 @@ public slots:
     void changedPrefix(const QString& prefix);
     void changedAmount(const QString& amount);
     void exportClicked();
+    void refreshClicked();
     void focusTransaction(const QModelIndex&);
     void computeSum();
 };

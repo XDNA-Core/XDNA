@@ -2045,28 +2045,34 @@ UniValue autocombinerewards(const UniValue& params, bool fHelp)
     if (params.size() >= 1)
         fEnable = params[0].get_bool();
 
-    if (fHelp || params.size() < 1 || (fEnable && params.size() != 2) || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "autocombinerewards true|false ( threshold )\n"
+            "autocombinerewards true|false ( threshold ) ( limit )\n"
             "\nWallet will automatically monitor for any coins with value below the threshold amount, and combine them if they reside with the same XDNA address\n"
             "When autocombinerewards runs it will create a transaction, and therefore will be subject to transaction fees.\n"
+            "Autocombine is not affected to input who have more confirms then confirmation limit value..\n"
 
             "\nArguments:\n"
             "1. true|false      (boolean, required) Enable auto combine (true) or disable (false)\n"
             "2. threshold       (numeric, optional) Threshold amount (default: 0)\n"
+            "3. conf.limit      (numeric, optional) Limit autocombine input confirmation (default: 0 - no limit)\n"
             "\nExamples:\n" +
             HelpExampleCli("autocombinerewards", "true 500") + HelpExampleRpc("autocombinerewards", "true 500"));
 
     CWalletDB walletdb(pwalletMain->strWalletFile);
     CAmount nThreshold = 0;
+    int nLimit = 0;
 
     if (fEnable)
         nThreshold = params[1].get_int();
+    if (params.size() == 3)
+        nLimit = params[2].get_int();
 
     pwalletMain->fCombineDust = fEnable;
     pwalletMain->nAutoCombineThreshold = nThreshold;
+    pwalletMain->nAutoCombineLimit = nLimit;
 
-    if (!walletdb.WriteAutoCombineSettings(fEnable, nThreshold))
+    if (!walletdb.WriteAutoCombineSettings(fEnable, nThreshold, nLimit))
         throw runtime_error("Changed settings in wallet but failed to save to database\n");
 
     return NullUniValue;

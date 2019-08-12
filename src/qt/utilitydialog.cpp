@@ -45,6 +45,8 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
     version += " " + tr("(%1-bit)").arg(32);
 #endif
 
+    ui->graphic->setPixmap(QPixmap(GUIUtil::getThemeImage(":/images/about")));
+
     if (about) {
         setWindowTitle(tr("About XDNA Core"));
 

@@ -243,6 +243,179 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="stakeThresholdGroupBox">
+         <property name="title">
+          <string>Stake split threshold</string>
+         </property>
+         <layout class="QHBoxLayout" name="stakeThresholdHLayout">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>11</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
+           <number>9</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="stakeThresholdLabel">
+            <property name="text">
+             <string>Threshold value:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="stakeThresholdSlider">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>2000</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="stakeThresholdEdit">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>2000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="autoCombineGroupBox">
+         <property name="title">
+          <string>Autocombine reward</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>11</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
+           <number>9</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="autoCombineCheckBox">
+            <property name="text">
+             <string>Enable autocombine rewards</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="autoCombineFrame">
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <layout class="QGridLayout" name="autoCombineGrid">
+               <item row="0" column="1">
+                <widget class="QSlider" name="autoCombineSlider">
+                 <property name="minimum">
+                  <number>0</number>
+                 </property>
+                 <property name="maximum">
+                  <number>5000</number>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QSpinBox" name="autoCombineEdit">
+                 <property name="minimum">
+                  <number>0</number>
+                 </property>
+                 <property name="maximum">
+                  <number>5000</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QLabel" name="autoCombineLabel">
+                 <property name="toolTip">
+                  <string>Combine outputs, within the same address, to the setting value. A standard transaction will be created, one combine operation on each chain block.</string>
+                 </property>
+                 <property name="text">
+                  <string>Autocombine value:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="autoCombineLimitLabel">
+                 <property name="toolTip">
+                  <string>Do not affect the inputs with the number of confirmations over the limit ( 0 = disabled, confirmations are not checked )</string>
+                 </property>
+                 <property name="text">
+                  <string>Confirmations limit:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QSlider" name="autoCombineLimitSlider">
+                  <property name="minimum">
+                   <number>0</number>
+                  </property>
+                  <property name="maximum">
+                   <number>5000</number>
+                  </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2">
+                <widget class="QSpinBox" name="autoCombineLimitEdit">
+                  <property name="minimum">
+                   <number>0</number>
+                  </property>
+                  <property name="maximum">
+                   <number>5000</number>
+                  </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_Wallet">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -468,6 +641,20 @@
          </item>
          <item>
           <widget class="QValueComboBox" name="theme"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_6_Display">
+         <item>
+          <widget class="QLabel" name="toolbarLabel">
+           <property name="text">
+            <string>Toolbar Position:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QValueComboBox" name="toolbarPosition"/>
          </item>
         </layout>
        </item>

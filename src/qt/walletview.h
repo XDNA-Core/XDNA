@@ -72,7 +72,7 @@ private:
     QWidget* transactionsPage;
     ReceiveCoinsDialog* receiveCoinsPage;
     SendCoinsDialog* sendCoinsPage;
-    BlockExplorer* explorerWindow;
+//    BlockExplorer* explorerWindow;
     MasternodeList* masternodeListPage;
     ToolsPage *toolsPage;
 
@@ -89,14 +89,14 @@ public slots:
     /** Switch to masternode page */
     void gotoMasternodePage();
     /** Switch to explorer page */
-    void gotoBlockExplorerPage();
+//    void gotoBlockExplorerPage();
     /** Switch to receive coins page */
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
     /** Switch to tools page */
-    void gotoToolsPage();    
-   
+    void gotoToolsPage();
+
 
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */

@@ -57,12 +57,12 @@ const QString REINDEX("-reindex");
 
 const struct {
     const char* url;
-    const char* source;
+    const QString& source;
 } ICON_MAPPING[] = {
-    {"cmd-request", ":/icons/tx_input"},
-    {"cmd-reply", ":/icons/tx_output"},
-    {"cmd-error", ":/icons/tx_output"},
-    {"misc", ":/icons/tx_inout"},
+    {"cmd-request", GUIUtil::getThemeImage(":/icons/tx_input")},
+    {"cmd-reply", GUIUtil::getThemeImage(":/icons/tx_output")},
+    {"cmd-error", GUIUtil::getThemeImage(":/icons/tx_output")},
+    {"misc", GUIUtil::getThemeImage(":/icons/tx_inout")},
     {NULL, NULL}};
 
 /* Object for executing console RPC commands in a separate thread.
@@ -229,10 +229,13 @@ ToolsPage::ToolsPage(QWidget* parent) : QWidget(parent),
                                           cachedNodeid(-1)
 {
     ui->setupUi(this);
+
+    ui->clearButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/remove")));
+
     GUIUtil::restoreWindowGeometry("nToolsPageWindow", this->size(), this);
 
 #ifndef Q_OS_MAC
-    ui->openDebugLogfileButton->setIcon(QIcon(":/icons/export"));
+    ui->openDebugLogfileButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/export")));
 #endif
 
     // Install event filter for up and down arrow
@@ -248,7 +251,7 @@ ToolsPage::ToolsPage(QWidget* parent) : QWidget(parent),
     connect(ui->btn_zapwallettxes1, SIGNAL(clicked()), this, SLOT(walletZaptxes1()));
     connect(ui->btn_zapwallettxes2, SIGNAL(clicked()), this, SLOT(walletZaptxes2()));
     connect(ui->btn_upgradewallet, SIGNAL(clicked()), this, SLOT(walletUpgrade()));
-    connect(ui->btn_reindex, SIGNAL(clicked()), this, SLOT(walletReindex()));    
+    connect(ui->btn_reindex, SIGNAL(clicked()), this, SLOT(walletReindex()));
 
     // set library version labels
     ui->openSSLVersion->setText(SSLeay_version(SSLEAY_VERSION));

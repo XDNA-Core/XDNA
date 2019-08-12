@@ -9,6 +9,7 @@
 #include "base58.h"
 #include "init.h"
 #include "ui_multisenddialog.h"
+#include "guiutil.h"
 #include "walletmodel.h"
 #include <QLineEdit>
 #include <QMessageBox>
@@ -22,6 +23,8 @@ MultiSendDialog::MultiSendDialog(QWidget* parent) : QDialog(parent),
                                                     model(0)
 {
     ui->setupUi(this);
+
+    ui->addressBookButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/address-book")));
 
     updateCheckBoxes();
 }

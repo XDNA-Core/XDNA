@@ -10,6 +10,7 @@
 
 #include "bitcoinunits.h"
 #include "clientmodel.h"
+#include "chain.h"
 #include "guiconstants.h"
 #include "guiutil.h"
 #include "init.h"
@@ -24,20 +25,21 @@
 #include "chainparams.h"
 #include "amount.h"
 #include "addressbookpage.h"
+#include "rpcblockchain.cpp"
 
 #include <QAbstractItemDelegate>
 #include <QPainter>
 #include <QSettings>
 #include <QString>
 #include <QTimer>
-
-
+#include <QUrl>
+#include <QDesktopServices>
 
 
 
 #define DECORATION_SIZE 38
 #define ICON_OFFSET 16
-#define NUM_ITEMS 6
+#define NUM_ITEMS 10
 
 extern CWallet* pwalletMain;
 
@@ -51,12 +53,15 @@ public:
 
     inline void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
     {
+        QSettings settings;
+        QString theme = settings.value("theme", "default").toString();
+
         painter->save();
 
         QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
         QRect mainRect = option.rect;
         mainRect.moveLeft(ICON_OFFSET);
-        QRect decorationRect(mainRect.topLeft(), QSize(DECORATION_SIZE, DECORATION_SIZE));
+        QRect decorationRect(mainRect.topLeft(), QSize(DECORATION_SIZE - 6, DECORATION_SIZE - 6));
         int xspace = DECORATION_SIZE + 8;
         int ypad = 6;
         int halfheight = (mainRect.height() - 2 * ypad) / 2;
@@ -124,6 +129,21 @@ OverviewPage::OverviewPage(QWidget* parent) : QWidget(parent),
     nDisplayUnit = 0; // just make sure it's not unitialized
     ui->setupUi(this);
 
+    ui->pushButton_Website->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/website")));
+    ui->pushButton_Website->setStatusTip(tr("Go to XDNA Website"));
+    ui->pushButton_Discord->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/discord")));
+    ui->pushButton_Discord->setStatusTip(tr("Join XDNA Discord"));
+    ui->pushButton_Telegram->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/telegram")));
+    ui->pushButton_Telegram->setStatusTip(tr("Join XDNA Telegram"));
+    ui->pushButton_Twitter->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/twitter")));
+    ui->pushButton_Twitter->setStatusTip(tr("Read XDNA Twitter"));
+    ui->pushButton_Explorer->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/explorer")));
+    ui->pushButton_Explorer->setStatusTip(tr("Go to XDNA BlockExplorer"));
+    ui->pushButton_Reddit->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/reddit")));
+    ui->pushButton_Reddit->setStatusTip(tr("Read XDNA reddit"));
+    ui->pushButton_Medium->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/medium")));
+    ui->pushButton_Medium->setStatusTip(tr("Read XDNA Medium"));
+
     // Recent transactions
     ui->listTransactions->setItemDelegate(txdelegate);
     ui->listTransactions->setIconSize(QSize(DECORATION_SIZE, DECORATION_SIZE));
@@ -131,7 +151,7 @@ OverviewPage::OverviewPage(QWidget* parent) : QWidget(parent),
     ui->listTransactions->setAttribute(Qt::WA_MacShowFocusRect, false);
 
     connect(ui->listTransactions, SIGNAL(clicked(QModelIndex)), this, SLOT(handleTransactionClicked(QModelIndex)));
-    ui->AdditionalFeatures->setTabEnabled(1,false);
+    //ui->AdditionalFeatures->setTabEnabled(1,false);
 
     // init "out of sync" warning labels
     ui->labelWalletStatus->setText("(" + tr("out of sync") + ")");
@@ -139,18 +159,18 @@ OverviewPage::OverviewPage(QWidget* parent) : QWidget(parent),
     ui->labelTransactionsStatus->setText("(" + tr("out of sync") + ")");
 
     if (fLiteMode) {
-        ui->frameObfuscation->setVisible(false);
+        //ui->frameObfuscation->setVisible(false);
     } else {
         if (fMasterNode) {
-            ui->toggleObfuscation->setText("(" + tr("Disabled") + ")");
-            ui->obfuscationAuto->setText("(" + tr("Disabled") + ")");
-            ui->obfuscationReset->setText("(" + tr("Disabled") + ")");
-            ui->frameObfuscation->setEnabled(false);
+            // ui->toggleObfuscation->setText("(" + tr("Disabled") + ")");
+            // ui->obfuscationAuto->setText("(" + tr("Disabled") + ")");
+            // ui->obfuscationReset->setText("(" + tr("Disabled") + ")");
+            // ui->frameObfuscation->setEnabled(false);
         } else {
             if (!fEnableObfuscation) {
-                ui->toggleObfuscation->setText(tr("Start Obfuscation"));
+                //ui->toggleObfuscation->setText(tr("Start Obfuscation"));
             } else {
-                ui->toggleObfuscation->setText(tr("Stop Obfuscation"));
+                //ui->toggleObfuscation->setText(tr("Stop Obfuscation"));
             }
             timer = new QTimer(this);
             connect(timer, SIGNAL(timeout()), this, SLOT(obfuScationStatus()));
@@ -163,8 +183,8 @@ OverviewPage::OverviewPage(QWidget* parent) : QWidget(parent),
     timerinfo_mn->start(1000);
 
     timerinfo_blockchain = new QTimer(this);
-    connect(timerinfo_blockchain, SIGNAL(timeout()), this, SLOT(updatBlockChainInfo()));
-    timerinfo_blockchain->start(10000); //30sec
+    connect(timerinfo_blockchain, SIGNAL(timeout()), this, SLOT(updateBlockChainInfo()));
+    timerinfo_blockchain->start(1000); //30sec
 
     // start with displaying the "out of sync" warnings
     showOutOfSyncWarning(true);
@@ -198,7 +218,7 @@ void OverviewPage::setBalance(const CAmount& balance, const CAmount& unconfirmed
         ui->labelBalance->setText(BitcoinUnits::floorHtmlWithoutUnit(nDisplayUnit, balance, false, BitcoinUnits::separatorNever));
     ui->labelUnconfirmed->setText(BitcoinUnits::floorHtmlWithoutUnit(nDisplayUnit, unconfirmedBalance, false, BitcoinUnits::separatorNever));
     ui->labelImmature->setText(BitcoinUnits::floorHtmlWithoutUnit(nDisplayUnit, immatureBalance, false, BitcoinUnits::separatorNever));
-    ui->labelAnonymized->setText(BitcoinUnits::floorHtmlWithoutUnit(nDisplayUnit, anonymizedBalance, false, BitcoinUnits::separatorAlways));
+    //ui->labelAnonymized->setText(BitcoinUnits::floorHtmlWithoutUnit(nDisplayUnit, anonymizedBalance, false, BitcoinUnits::separatorAlways));
     ui->labelTotal->setText(BitcoinUnits::floorHtmlWithoutUnit(nDisplayUnit, balance + unconfirmedBalance + immatureBalance, false, BitcoinUnits::separatorNever));
 
 
@@ -211,7 +231,7 @@ void OverviewPage::setBalance(const CAmount& balance, const CAmount& unconfirmed
     // for symmetry reasons also show immature label when the watch-only one is shown
     ui->labelImmature->setVisible(showImmature || showWatchOnlyImmature);
     ui->labelImmatureText->setVisible(showImmature || showWatchOnlyImmature);
-    ui->label_XDNA4->setVisible(showImmature || showWatchOnlyImmature);
+//    ui->label_XDNA4->setVisible(showImmature || showWatchOnlyImmature);
 
    // ui->labelWatchImmature->setVisible(showWatchOnlyImmature); // show watch-only immature balance
 
@@ -268,18 +288,19 @@ void OverviewPage::setWalletModel(WalletModel* model)
 
         //----------
         // Keep up to date with wallet
-        setBalance(model->getBalance(), model->getUnconfirmedBalance(), model->getImmatureBalance(), model->getAnonymizedBalance(),
-        model->getWatchBalance(), model->getWatchUnconfirmedBalance(), model->getWatchImmatureBalance());
+//        setBalance(model->getBalance(), model->getUnconfirmedBalance(), model->getImmatureBalance(), model->getAnonymizedBalance(),
+//        model->getWatchBalance(), model->getWatchUnconfirmedBalance(), model->getWatchImmatureBalance());
         connect(model, SIGNAL(balanceChanged(CAmount, CAmount, CAmount, CAmount, CAmount, CAmount, CAmount)), this, SLOT(setBalance(CAmount, CAmount, CAmount, CAmount, CAmount, CAmount, CAmount)));
 
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 
-        connect(ui->obfuscationAuto, SIGNAL(clicked()), this, SLOT(obfuscationAuto()));
-        connect(ui->obfuscationReset, SIGNAL(clicked()), this, SLOT(obfuscationReset()));
-        connect(ui->toggleObfuscation, SIGNAL(clicked()), this, SLOT(toggleObfuscation()));
+        // connect(ui->obfuscationAuto, SIGNAL(clicked()), this, SLOT(obfuscationAuto()));
+        // connect(ui->obfuscationReset, SIGNAL(clicked()), this, SLOT(obfuscationReset()));
+        // connect(ui->toggleObfuscation, SIGNAL(clicked()), this, SLOT(toggleObfuscation()));
         connect(model, SIGNAL(notifyWatchonlyChanged(bool)), this, SLOT(updateWatchOnlyLabels(bool)));
         connect(ui->blabel_XDNA, SIGNAL(clicked()), this, SLOT(openMyAddresses()));
 
+        emit model->makeBalance();
     }
 
     // update the display unit, to not use the default ("XDNA")
@@ -307,9 +328,12 @@ void OverviewPage::updateAlerts(const QString& warnings)
   //  this->ui->labelAlerts->setText(warnings);
 }
 
+double roi1, roi2, roi3;
 
 void OverviewPage::updateMasternodeInfo()
 {
+  int CurrentBlock = clientModel->getNumBlocks();
+
   if (masternodeSync.IsBlockchainSynced() && masternodeSync.IsSynced())
   {
 
@@ -338,23 +362,55 @@ void OverviewPage::updateMasternodeInfo()
     ui->graphMN2->setMaximum(totalmn);
     ui->graphMN3->setMaximum(totalmn);
     ui->graphMN1->setValue(mn1);
-    ui->graphMN2->setValue(mn2);
     ui->graphMN3->setValue(mn3);
+    ui->graphMN2->setValue(mn2);
 
-    if(timerinfo_mn->interval() == 1000)
-           timerinfo_mn->setInterval(180000);
-  }
-}
+    // TODO: need a read actual 24h blockcount from chain
+    int BlockCount24h = block24hCount > 0 ? block24hCount : 1440;
 
-void OverviewPage::updatBlockChainInfo()
-{
-    if(!masternodeSync.IsBlockchainSynced())
-        return;
-
+    // update ROI
     uint32_t tip_time = chainActive.Tip()->GetBlockTime();
 
     int CurrentBlock = chainActive.Height();
-    int64_t netHashRate = chainActive.GetNetworkHashPS(24, CurrentBlock);
+    int64_t netHashRate = chainActive.GetNetworkHashPS(24, CurrentBlock-1);
+    int64_t BlockReward = Params().SubsidyValue(netHashRate, tip_time, CurrentBlock);
+    (mn1==0) ? roi1 = 0 : roi1 = (GetMasternodePayment(ActiveProtocol(), tip_time, 1, BlockReward)*BlockCount24h)/mn1/COIN;
+    (mn2==0) ? roi2 = 0 : roi2 = (GetMasternodePayment(ActiveProtocol(), tip_time, 2, BlockReward)*BlockCount24h)/mn2/COIN;
+    (mn3==0) ? roi3 = 0 : roi3 = (GetMasternodePayment(ActiveProtocol(), tip_time, 3, BlockReward)*BlockCount24h)/mn3/COIN;
+    if (CurrentBlock >= 0) {
+        ui->roi_11->setText(mn1==0 ? "-" : QString::number(roi1,'f',0).append("  |"));
+        ui->roi_21->setText(mn2==0 ? "-" : QString::number(roi2,'f',0).append("  |"));
+        ui->roi_31->setText(mn3==0 ? "-" : QString::number(roi3,'f',0).append("  |"));
+
+        ui->roi_12->setText(mn1==0 ? " " : QString::number(  1000/roi1,'f',1).append(" days"));
+        ui->roi_22->setText(mn2==0 ? " " : QString::number(  3000/roi2,'f',1).append(" days"));
+        ui->roi_32->setText(mn3==0 ? " " : QString::number(  5000/roi3,'f',1).append(" days"));
+    }
+    CAmount tNodesSumm = mn1*1000 + mn2*3000 + mn3*5000;
+    CAmount tMoneySupply = chainActive.Tip()->nMoneySupply;
+    double tLocked = tMoneySupply > 0 ? 100 * static_cast<double>(tNodesSumm) / static_cast<double>(tMoneySupply / COIN) : 0;
+    ui->label_LockedCoin_value->setText(QString::number(tNodesSumm).append(" (" + QString::number(tLocked,'f',1) + "%)"));
+
+    // update timer
+    if (timerinfo_mn->interval() == 1000)
+            timerinfo_mn->setInterval(10000);
+  }
+
+  // update collateral info
+  if (CurrentBlock >= 0) {
+      ui->label_lcolat->setText("1000 XDNA");
+      ui->label_mcolat->setText("3000 XDNA");
+      ui->label_fcolat->setText("5000 XDNA");
+  }
+}
+
+void OverviewPage::updateBlockChainInfo()
+{
+    if (masternodeSync.IsBlockchainSynced())
+    {
+    uint32_t tip_time = chainActive.Tip()->GetBlockTime();
+    int CurrentBlock = clientModel->getNumBlocks();
+    int64_t netHashRate = chainActive.GetNetworkHashPS(24, CurrentBlock-1);
     int64_t BlockReward = Params().SubsidyValue(netHashRate, tip_time, CurrentBlock);
     double BlockRewardXDNA =  static_cast<double>(BlockReward)/static_cast<double>(COIN);
     //int64_t XDNASupply = chainActive.Tip()->nMoneySupply / COIN;
@@ -392,9 +448,9 @@ void OverviewPage::updatBlockChainInfo()
     }
 
     ui->label_CurrentBlockReward_value->setText(QString::number(BlockRewardXDNA));
-    //ui->label_XDNASupply_value->setText(QString::number(XDNASupply));
+    ui->label_Supply_value->setText(QString::number(chainActive.Tip()->nMoneySupply / COIN).append(" XDNA"));
+    }
 }
-
 void OverviewPage::openMyAddresses()
 {
     AddressBookPage* dlg = new AddressBookPage(AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
@@ -412,6 +468,8 @@ void OverviewPage::showOutOfSyncWarning(bool fShow)
 
 void OverviewPage::updateObfuscationProgress()
 {
+    return; // not used at this time
+
     if (!masternodeSync.IsBlockchainSynced() || ShutdownRequested()) return;
 
     if (!pwalletMain) return;
@@ -420,15 +478,15 @@ void OverviewPage::updateObfuscationProgress()
     QString strAnonymizeXDnaAmount = BitcoinUnits::formatHtmlWithUnit(nDisplayUnit, nAnonymizeXDnaAmount * COIN, false, BitcoinUnits::separatorAlways);
 
     if (currentBalance == 0) {
-        ui->obfuscationProgress->setValue(0);
-        ui->obfuscationProgress->setToolTip(tr("No inputs detected"));
+        // ui->obfuscationProgress->setValue(0);
+        // ui->obfuscationProgress->setToolTip(tr("No inputs detected"));
 
         // when balance is zero just show info from settings
         strAnonymizeXDnaAmount = strAnonymizeXDnaAmount.remove(strAnonymizeXDnaAmount.indexOf("."), BitcoinUnits::decimals(nDisplayUnit) + 1);
         strAmountAndRounds = strAnonymizeXDnaAmount + " / " + tr("%n Rounds", "", nObfuscationRounds);
 
-        ui->labelAmountRounds->setToolTip(tr("No inputs detected"));
-        ui->labelAmountRounds->setText(strAmountAndRounds);
+        // ui->labelAmountRounds->setToolTip(tr("No inputs detected"));
+        // ui->labelAmountRounds->setText(strAmountAndRounds);
         return;
     }
 
@@ -457,22 +515,22 @@ void OverviewPage::updateObfuscationProgress()
     if (nMaxToAnonymize == 0) return;
 
     if (nMaxToAnonymize >= nAnonymizeXDnaAmount * COIN) {
-        ui->labelAmountRounds->setToolTip(tr("Found enough compatible inputs to anonymize %1")
-                                              .arg(strAnonymizeXDnaAmount));
+        //ui->labelAmountRounds->setToolTip(tr("Found enough compatible inputs to anonymize %1")
+        //                                       .arg(strAnonymizeXDnaAmount));
         strAnonymizeXDnaAmount = strAnonymizeXDnaAmount.remove(strAnonymizeXDnaAmount.indexOf("."), BitcoinUnits::decimals(nDisplayUnit) + 1);
         strAmountAndRounds = strAnonymizeXDnaAmount + " / " + tr("%n Rounds", "", nObfuscationRounds);
     } else {
         QString strMaxToAnonymize = BitcoinUnits::formatHtmlWithUnit(nDisplayUnit, nMaxToAnonymize, false, BitcoinUnits::separatorAlways);
-        ui->labelAmountRounds->setToolTip(tr("Not enough compatible inputs to anonymize <span style='color:red;'>%1</span>,<br>"
-                                             "will anonymize <span style='color:red;'>%2</span> instead")
-                                              .arg(strAnonymizeXDnaAmount)
-                                              .arg(strMaxToAnonymize));
+        // ui->labelAmountRounds->setToolTip(tr("Not enough compatible inputs to anonymize <span style='color:red;'>%1</span>,<br>"
+        //                                      "will anonymize <span style='color:red;'>%2</span> instead")
+        //                                       .arg(strAnonymizeXDnaAmount)
+        //                                       .arg(strMaxToAnonymize));
         strMaxToAnonymize = strMaxToAnonymize.remove(strMaxToAnonymize.indexOf("."), BitcoinUnits::decimals(nDisplayUnit) + 1);
         strAmountAndRounds = "<span style='color:red;'>" +
                              QString(BitcoinUnits::factor(nDisplayUnit) == 1 ? "" : "~") + strMaxToAnonymize +
                              " / " + tr("%n Rounds", "", nObfuscationRounds) + "</span>";
     }
-    ui->labelAmountRounds->setText(strAmountAndRounds);
+    //ui->labelAmountRounds->setText(strAmountAndRounds);
 
     // calculate parts of the progress, each of them shouldn't be higher than 1
     // progress of denominating
@@ -507,7 +565,7 @@ void OverviewPage::updateObfuscationProgress()
     float progress = denomPartCalc + anonNormPartCalc + anonFullPartCalc;
     if (progress >= 100) progress = 100;
 
-    ui->obfuscationProgress->setValue(progress);
+    //ui->obfuscationProgress->setValue(progress);
 
     QString strToolPip = ("<b>" + tr("Overall progress") + ": %1%</b><br/>" +
                           tr("Denominated") + ": %2%<br/>" +
@@ -519,7 +577,7 @@ void OverviewPage::updateObfuscationProgress()
                              .arg(anonNormPart)
                              .arg(anonFullPart)
                              .arg(nAverageAnonymizedRounds);
-    ui->obfuscationProgress->setToolTip(strToolPip);
+    //ui->obfuscationProgress->setToolTip(strToolPip);
 }
 
 
@@ -538,9 +596,9 @@ void OverviewPage::obfuScationStatus()
             obfuScationPool.cachedNumBlocks = nBestHeight;
             updateObfuscationProgress();
 
-            ui->obfuscationEnabled->setText(tr("Disabled"));
-            ui->obfuscationStatus->setText("");
-            ui->toggleObfuscation->setText(tr("Start Obfuscation"));
+            // ui->obfuscationEnabled->setText(tr("Disabled"));
+            // ui->obfuscationStatus->setText("");
+            // ui->toggleObfuscation->setText(tr("Start Obfuscation"));
         }
 
         return;
@@ -552,25 +610,25 @@ void OverviewPage::obfuScationStatus()
         obfuScationPool.cachedNumBlocks = nBestHeight;
         updateObfuscationProgress();
 
-        ui->obfuscationEnabled->setText(tr("Enabled"));
+        // ui->obfuscationEnabled->setText(tr("Enabled"));
     }
 
     QString strStatus = QString(obfuScationPool.GetStatus().c_str());
 
     QString s = strStatus;
 
-    if (s != ui->obfuscationStatus->text())
-        LogPrintf("Last Obfuscation message: %s\n", strStatus.toStdString());
+    // if (s != ui->obfuscationStatus->text())
+    //     LogPrintf("Last Obfuscation message: %s\n", strStatus.toStdString());
 
-    ui->obfuscationStatus->setText(s);
+    //ui->obfuscationStatus->setText(s);
 
     if (obfuScationPool.sessionDenom == 0) {
-        ui->labelSubmittedDenom->setText(tr("N/A"));
+        //ui->labelSubmittedDenom->setText(tr("N/A"));
     } else {
         std::string out;
         obfuScationPool.GetDenominationsToString(obfuScationPool.sessionDenom, out);
         QString s2(out.c_str());
-        ui->labelSubmittedDenom->setText(s2);
+        //ui->labelSubmittedDenom->setText(s2);
     }
 }
 
@@ -629,10 +687,10 @@ void OverviewPage::toggleObfuscation()
     obfuScationPool.cachedNumBlocks = std::numeric_limits<int>::max();
 
     if (!fEnableObfuscation) {
-        ui->toggleObfuscation->setText(tr("Start Obfuscation"));
+        //ui->toggleObfuscation->setText(tr("Start Obfuscation"));
         obfuScationPool.UnlockCoins();
     } else {
-        ui->toggleObfuscation->setText(tr("Stop Obfuscation"));
+        //ui->toggleObfuscation->setText(tr("Stop Obfuscation"));
 
         /* show obfuscation configuration if client has defaults set */
 
@@ -642,4 +700,31 @@ void OverviewPage::toggleObfuscation()
             dlg.exec();
         }
     }
+}
+
+void OverviewPage::on_pushButton_Website_clicked() {
+    QDesktopServices::openUrl(QUrl("https://xdna.io/", QUrl::TolerantMode));
+}
+void OverviewPage::on_pushButton_Discord_clicked() {
+    QDesktopServices::openUrl(QUrl("https://discord.gg/M49t5gD", QUrl::TolerantMode));
+}
+void OverviewPage::on_pushButton_Telegram_clicked() {
+    QDesktopServices::openUrl(QUrl("https://t.me/xdna_official", QUrl::TolerantMode));
+}
+void OverviewPage::on_pushButton_Twitter_clicked() {
+    QDesktopServices::openUrl(QUrl("https://twitter.com/XDNA_Official", QUrl::TolerantMode));
+}
+void OverviewPage::on_pushButton_Reddit_clicked() {
+    QDesktopServices::openUrl(QUrl("https://www.reddit.com/r/XDNA_Official", QUrl::TolerantMode));
+}
+void OverviewPage::on_pushButton_Medium_clicked() {
+    QDesktopServices::openUrl(QUrl("https://medium.com/@xdna.info", QUrl::TolerantMode));
+}
+/*
+void OverviewPage::on_pushButton_Facebook_clicked() {
+    QDesktopServices::openUrl(QUrl("https://www.facebook.com/xdna.official", QUrl::TolerantMode));
+}
+*/
+void OverviewPage::on_pushButton_Explorer_clicked() {
+    QDesktopServices::openUrl(QUrl("https://explorer.xdna.io", QUrl::TolerantMode));
 }

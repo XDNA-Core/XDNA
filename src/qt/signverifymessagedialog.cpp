@@ -26,6 +26,15 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget* parent) : QDialog(pare
 {
     ui->setupUi(this);
 
+    ui->addressBookButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/address-book")));
+    ui->pasteButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/editpaste")));
+    ui->copySignatureButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/editcopy")));
+    ui->signMessageButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/edit")));
+    ui->clearButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/remove")));
+    ui->addressBookButton_VM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/address-book")));
+    ui->verifyMessageButton_VM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/transaction_0")));
+    ui->clearButton_VM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/remove")));
+
 #if QT_VERSION >= 0x040700
     ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
 #endif

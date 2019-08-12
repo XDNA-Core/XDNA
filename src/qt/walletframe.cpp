@@ -136,7 +136,6 @@ void WalletFrame::gotoToolsPage()
         i.value()->gotoToolsPage();
 }
 
-
 void WalletFrame::gotoToolsPageTab(enum ToolsPage::TabTypes page)
 {
    QMap<QString, WalletView*>::const_iterator i;
@@ -144,13 +143,6 @@ void WalletFrame::gotoToolsPageTab(enum ToolsPage::TabTypes page)
         i.value()->gotoToolsPageTab(page);
 }
 
-
-void WalletFrame::gotoBlockExplorerPage()
-{
-    QMap<QString, WalletView*>::const_iterator i;
-    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
-        i.value()->gotoBlockExplorerPage();
-}
 
 void WalletFrame::gotoReceiveCoinsPage()
 {

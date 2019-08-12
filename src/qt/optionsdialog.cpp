@@ -30,6 +30,7 @@
 #include <QLocale>
 #include <QMessageBox>
 #include <QTimer>
+#include <QSettings>
 
 OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet) : QDialog(parent),
                                                                    ui(new Ui::OptionsDialog),
@@ -76,6 +77,9 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet) : QDialog(paren
     /* remove Wallet tab in case of -disablewallet */
     if (!enableWallet) {
         ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabWallet));
+    } else {
+      if (pwalletMain && !pwalletMain->fCombineDust)
+          ui->autoCombineFrame->setVisible(false);
     }
 
     /* Display elements init */
@@ -89,6 +93,10 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet) : QDialog(paren
 
     /* Theme selector static themes */
     ui->theme->addItem(QString("Default"), QVariant("default"));
+
+    /* Toolbar selector */
+    ui->toolbarPosition->addItem(QString("Top of window"), QVariant("Top"));
+    ui->toolbarPosition->addItem(QString("Left side"), QVariant("Left"));
 
     /* Theme selector external themes */
     boost::filesystem::path pathAddr = GetDataDir() / "themes";
@@ -139,16 +147,18 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet) : QDialog(paren
 
     /* setup/change UI elements when proxy IP is invalid/valid */
     connect(this, SIGNAL(proxyIpChecks(QValidatedLineEdit*, int)), this, SLOT(doProxyIpChecks(QValidatedLineEdit*, int)));
-   
-    ui->unitLabel->setVisible(false);
-    ui->unit->setVisible(false);
-    ui->digitsLabel->setVisible(false);
-    ui->digits->setVisible(false);
-    ui->thirdPartyTxUrlsLabel->setVisible(false);
-    ui->thirdPartyTxUrls->setVisible(false);
-    ui->themeLabel->setVisible(false);
-    ui->theme->setVisible(false);
-    
+
+    ui->unitLabel->setVisible(true);
+    ui->unit->setVisible(true);
+    ui->digitsLabel->setVisible(true);
+    ui->digits->setVisible(true);
+    ui->thirdPartyTxUrlsLabel->setVisible(true);
+    ui->thirdPartyTxUrls->setVisible(true);
+    ui->themeLabel->setVisible(true);
+    ui->theme->setVisible(true);
+    ui->toolbarLabel->setVisible(true);
+    ui->toolbarPosition->setVisible(true);
+
 }
 
 OptionsDialog::~OptionsDialog()
@@ -189,6 +199,7 @@ void OptionsDialog::setModel(OptionsModel* model)
     /* Display */
     connect(ui->digits, SIGNAL(valueChanged()), this, SLOT(showRestartWarning()));
     connect(ui->theme, SIGNAL(valueChanged()), this, SLOT(showRestartWarning()));
+    connect(ui->toolbarPosition, SIGNAL(valueChanged()), this, SLOT(showRestartWarning()));
     connect(ui->lang, SIGNAL(valueChanged()), this, SLOT(showRestartWarning()));
     connect(ui->thirdPartyTxUrls, SIGNAL(textChanged(const QString&)), this, SLOT(showRestartWarning()));
     connect(ui->showMasternodesTab, SIGNAL(clicked(bool)), this, SLOT(showRestartWarning()));
@@ -204,6 +215,10 @@ void OptionsDialog::setMapper()
     /* Wallet */
     mapper->addMapping(ui->spendZeroConfChange, OptionsModel::SpendZeroConfChange);
     mapper->addMapping(ui->coinControlFeatures, OptionsModel::CoinControlFeatures);
+    mapper->addMapping(ui->stakeThresholdEdit, OptionsModel::StakeSplitThreshold);
+    mapper->addMapping(ui->autoCombineEdit, OptionsModel::AutoCombineRewards);
+    mapper->addMapping(ui->autoCombineCheckBox, OptionsModel::AutoCombine);
+    mapper->addMapping(ui->autoCombineLimitEdit, OptionsModel::AutoCombineLimit);
 
     /* Network */
     mapper->addMapping(ui->mapPortUpnp, OptionsModel::MapPortUPnP);
@@ -222,7 +237,8 @@ void OptionsDialog::setMapper()
     /* Display */
     mapper->addMapping(ui->digits, OptionsModel::Digits);
     mapper->addMapping(ui->theme, OptionsModel::Theme);
-    mapper->addMapping(ui->theme, OptionsModel::Theme);
+//    mapper->addMapping(ui->theme, OptionsModel::Theme);
+    mapper->addMapping(ui->toolbarPosition, OptionsModel::ToolbarPosition);
     mapper->addMapping(ui->lang, OptionsModel::Language);
     mapper->addMapping(ui->unit, OptionsModel::DisplayUnit);
     mapper->addMapping(ui->thirdPartyTxUrls, OptionsModel::ThirdPartyTxUrls);
@@ -274,6 +290,11 @@ void OptionsDialog::on_okButton_clicked()
 {
     mapper->submit();
     obfuScationPool.cachedNumBlocks = std::numeric_limits<int>::max();
+
+    //setStakeSplitThreshold();
+    //setAutoCombineRewards();
+    setWalletOptions();
+
     pwalletMain->MarkDirty();
     accept();
 }
@@ -329,4 +350,72 @@ bool OptionsDialog::eventFilter(QObject* object, QEvent* event)
         }
     }
     return QDialog::eventFilter(object, event);
+}
+
+void OptionsDialog::on_stakeThresholdEdit_valueChanged(int i)
+{
+    ui->stakeThresholdSlider->setValue(i);
+}
+
+void OptionsDialog::on_stakeThresholdSlider_valueChanged(int value)
+{
+    ui->stakeThresholdEdit->setValue(value);
+}
+
+void OptionsDialog::on_autoCombineEdit_valueChanged(int i)
+{
+    ui->autoCombineSlider->setValue(i);
+}
+
+void OptionsDialog::on_autoCombineSlider_valueChanged(int value)
+{
+    ui->autoCombineEdit->setValue(value);
+}
+
+void OptionsDialog::on_autoCombineLimitEdit_valueChanged(int i)
+{
+    ui->autoCombineLimitSlider->setValue(i);
+}
+
+void OptionsDialog::on_autoCombineLimitSlider_valueChanged(int value)
+{
+    ui->autoCombineLimitEdit->setValue(value);
+}
+
+void OptionsDialog::on_autoCombineCheckBox_stateChanged(int state)
+{
+    if (state == Qt::Checked) {
+        ui->autoCombineFrame->setVisible(true);
+    } else {
+        ui->autoCombineFrame->setVisible(false);
+    }
+}
+
+void OptionsDialog::setWalletOptions()
+{
+    QSettings settings;
+
+    uint64_t nStakeSplitThreshold = settings.value("nStakeSplitThreshold").toInt();
+
+    bool AutoCombine = settings.value("bAutoCombine").toBool();
+    int AutoCombineRewards = settings.value("nAutoCombineRewards").toInt();
+    int AutoCombineLimit = settings.value("nAutoCombineLimit").toInt();
+
+    if (pwalletMain) {
+        CWalletDB walletdb(pwalletMain->strWalletFile);
+        {
+            LOCK(pwalletMain->cs_wallet);
+            /* Update StakeSplitThreshold's value in wallet */
+            pwalletMain->nStakeSplitThreshold = nStakeSplitThreshold;
+            /* Update AutoCombineRewards value in wallet */
+            pwalletMain->fCombineDust = AutoCombine;
+            pwalletMain->nAutoCombineThreshold = AutoCombineRewards;
+            pwalletMain->nAutoCombineLimit = AutoCombineLimit;
+            /* Write settings to wallet */
+            if (pwalletMain->fFileBacked) {
+                walletdb.WriteStakeSplitThreshold(nStakeSplitThreshold);
+                walletdb.WriteAutoCombineSettings(AutoCombine, AutoCombineRewards, AutoCombineLimit);
+            }
+        }
+    }
 }

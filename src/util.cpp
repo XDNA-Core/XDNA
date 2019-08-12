@@ -240,6 +240,7 @@ bool LogAcceptCategory(const char* category)
                 ptrCategory->insert(string("swiftx"));
                 ptrCategory->insert(string("masternode"));
                 ptrCategory->insert(string("mnpayments"));
+                ptrCategory->insert(string("tx"));
             }
         }
         const set<string>& setCategories = *ptrCategory.get();

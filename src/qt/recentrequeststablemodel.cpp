@@ -7,10 +7,12 @@
 #include "bitcoinunits.h"
 #include "clientversion.h"
 #include "guiutil.h"
+#include "walletmodel.h"
 #include "optionsmodel.h"
 #include "streams.h"
 
 #include <boost/foreach.hpp>
+#include <QDebug>
 
 RecentRequestsTableModel::RecentRequestsTableModel(CWallet* wallet, WalletModel* parent) : walletModel(parent)
 {
@@ -24,7 +26,7 @@ RecentRequestsTableModel::RecentRequestsTableModel(CWallet* wallet, WalletModel*
         addNewRequest(request);
 
     /* These columns must match the indices in the ColumnIndex enumeration */
-    columns << tr("Date") << tr("Label") << tr("Message") << getAmountTitle();
+    columns << tr("Date") << tr("Label") << tr("Address") << tr("Balance") << tr("Message") << getAmountTitle();
 
     connect(walletModel->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 }
@@ -57,30 +59,39 @@ QVariant RecentRequestsTableModel::data(const QModelIndex& index, int role) cons
 
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
         switch (index.column()) {
-        case Date:
-            return GUIUtil::dateTimeStr(rec->date);
-        case Label:
-            if (rec->recipient.label.isEmpty() && role == Qt::DisplayRole) {
-                return tr("(no label)");
-            } else {
-                return rec->recipient.label;
-            }
-        case Message:
-            if (rec->recipient.message.isEmpty() && role == Qt::DisplayRole) {
-                return tr("(no message)");
-            } else {
-                return rec->recipient.message;
-            }
-        case Amount:
-            if (rec->recipient.amount == 0 && role == Qt::DisplayRole)
-                return tr("(no amount)");
-            else if (role == Qt::EditRole)
-                return BitcoinUnits::format(walletModel->getOptionsModel()->getDisplayUnit(), rec->recipient.amount, false, BitcoinUnits::separatorNever);
-            else
-                return BitcoinUnits::format(walletModel->getOptionsModel()->getDisplayUnit(), rec->recipient.amount);
+            case Date:
+                return GUIUtil::dateTimeStr(rec->date);
+            case Address:
+                if (rec->recipient.address.isEmpty() && role == Qt::DisplayRole) {
+                    return tr("(no address)");
+                } else {
+                    return rec->recipient.address;
+                }
+            case Label:
+                if (rec->recipient.label.isEmpty() && role == Qt::DisplayRole) {
+                    return tr("(no label)");
+                } else {
+                    return rec->recipient.label;
+                }
+            case Message:
+                if (rec->recipient.message.isEmpty() && role == Qt::DisplayRole) {
+                    return tr("(no message)");
+                } else {
+                    return rec->recipient.message;
+                }
+            case Amount:
+                if (rec->recipient.amount == 0 && role == Qt::DisplayRole)
+                    return tr("(no amount)");
+                else if (role == Qt::EditRole)
+                    return BitcoinUnits::format(walletModel->getOptionsModel()->getDisplayUnit(), rec->recipient.amount, false, BitcoinUnits::separatorNever);
+                else
+                    return BitcoinUnits::format(walletModel->getOptionsModel()->getDisplayUnit(), rec->recipient.amount);
+            case Balance:
+                return QString::number(static_cast<double>(walletModel->getAddressBalance(rec->recipient.address)) / COIN, 'f', 2);
+
         }
     } else if (role == Qt::TextAlignmentRole) {
-        if (index.column() == Amount)
+        if (index.column() == Amount || index.column() == Balance)
             return (int)(Qt::AlignRight | Qt::AlignVCenter);
     }
     return QVariant();
@@ -215,6 +226,8 @@ bool RecentRequestEntryLessThan::operator()(RecentRequestEntry& left, RecentRequ
     switch (column) {
     case RecentRequestsTableModel::Date:
         return pLeft->date.toTime_t() < pRight->date.toTime_t();
+    case RecentRequestsTableModel::Address:
+        return pLeft->recipient.address < pRight->recipient.address;
     case RecentRequestsTableModel::Label:
         return pLeft->recipient.label < pRight->recipient.label;
     case RecentRequestsTableModel::Message:
