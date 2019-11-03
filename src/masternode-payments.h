@@ -242,7 +242,7 @@ public:
 
     bool GetBlockPayee(int nBlockHeight, unsigned mnlevel, CScript& payee);
     bool IsTransactionValid(const CTransaction& txNew, int nBlockHeight, uint32_t nTime);
-    bool IsScheduled(CMasternode& mn, int nSameLevelMNCount, int nNotBlockHeight) const;
+    bool IsScheduled(CMasternode& mn, int nNotBlockHeight);
     bool CanVote(const COutPoint& outMasternode, int nBlockHeight, unsigned mnlevel);
 
     int GetMinMasternodePaymentsProto();

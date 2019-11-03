@@ -19,9 +19,11 @@ extern CWallet* pwalletMain;
 
 void StartShutdown();
 bool ShutdownRequested();
+/** Interrupt threads */
 void Shutdown();
+void Interrupt();
 void PrepareShutdown();
-bool AppInit2(boost::thread_group& threadGroup);
+bool AppInit2();
 
 /** The help message mode determines what help message to show */
 enum HelpMessageMode {

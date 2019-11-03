@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX Core developers
-// Copyright (c) 2017-2018 The XDNA Core developers
+// Copyright (c) 2017-2019 The XDNA Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -107,12 +107,13 @@ public:
 
     /** Height or Time Based Activations **/
     //todo: ModifierUpgradeBlock affect POS
-    int ModifierUpgradeBlock() const { return nModifierUpdateBlock; }
-    int LAST_POW_BLOCK() const { return nLastPOWBlock; }
-    int StartMNPaymentsBlock() const {return nStartMasternodePaymentsBlock; }
+    int ModifierUpgradeBlock()       const { return nModifierUpdateBlock; }
+    int LAST_POW_BLOCK()             const { return nLastPOWBlock; }
+    int StartMNPaymentsBlock()       const { return nStartMasternodePaymentsBlock; }
+    int F3Activation()               const { return nF3ActivationHeight; }
 
-    uint32_t HEXHashActivationTime() const {return nHEXHashTimestamp;}
-    uint32_t F2ActivationTime()      const {return nF2Timestamp;}
+    uint32_t HEXHashActivationTime() const { return nHEXHashTimestamp; }
+    uint32_t F2ActivationTime()      const { return nF2Timestamp; }
 
     const SubsidySwitchPoints& GetSubsidySwitchPoints(uint32_t nTime, int nHeight) const;
 
@@ -142,6 +143,7 @@ protected:
     int nMasternodeCountDrift;
     int nMaturity;
     int nModifierUpdateBlock;
+    int nF3ActivationHeight;
     CAmount nMaxMoneyOut;
     int nMinerThreads;
     std::vector<CDNSSeedData> vSeeds;

@@ -68,7 +68,6 @@ libconftest.dylib*
 *.pyc
 *.o
 *.o-*
-*.patch
 .xdna
 *.a
 *.pb.cc

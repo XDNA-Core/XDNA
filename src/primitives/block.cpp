@@ -86,7 +86,7 @@ uint256 CBlock::BuildMerkleTree(bool* fMutated) const
                 mutated = true;
             }
             vMerkleTree.push_back(Hash(BEGIN(vMerkleTree[j+i]),  END(vMerkleTree[j+i]),
-                                        BEGIN(vMerkleTree[j+i2]), END(vMerkleTree[j+i2])));
+                                       BEGIN(vMerkleTree[j+i2]), END(vMerkleTree[j+i2])));
         }
         j += nSize;
     }
@@ -153,7 +153,6 @@ void CBlock::print() const
     LogPrintf("%s", ToString());
 }
 
-// ppcoin: sign block
 bool CBlock::SignBlock(const CKeyStore& keystore)
 {
     std::vector<valtype> vSolutions;

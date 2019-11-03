@@ -3,8 +3,6 @@ Release Process
 
 Before every release candidate:
 
-* Update translations (ping Fuzzbawls on Slack) see [translation_process.md](https://github.com/XDNA-Core/XDNA/blob/master/doc/translation_process.md#synchronising-translations).
-
 Before every minor and major release:
 
 * Update version in `configure.ac` (don't forget to set `CLIENT_VERSION_IS_RELEASE` to `true`)

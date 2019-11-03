@@ -8,8 +8,10 @@
 
 #include <stdint.h>
 
+class CBlockHeader;
 class CBlockIndex;
 class uint256;
+class arith_uint256;
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, uint32_t nTime);
 

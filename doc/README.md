@@ -26,9 +26,7 @@ Drag XDNA-Qt to your applications folder, and then run XDNA-Qt.
 
 ### Need Help?
 
-* See the documentation at the [XDNA Wiki](https://en.xdna.io/wiki/Main_Page) ***TODO***
-for help and more information.
-* Ask for help on [BitcoinTalk](https://bitcointalk.org) or on the [XDNA Forum](http://forum.xdna.io/).
+* Ask for help on [BitcoinTalk](https://bitcointalk.org/index.php?topic=1262920.0).
 * Join our Discord server [Discord Server](https://discord.gg/S9adMgS)
 
 Building
@@ -48,7 +46,6 @@ The XDNA repo's [root README](https://github.com/XDNA-Core/XDNA/blob/master/READ
 - [Multiwallet Qt Development](multiwallet-qt.md)
 - [Release Notes](release-notes.md)
 - [Release Process](release-process.md)
-- [Source Code Documentation (External Link)](https://dev.visucore.com/bitcoin/doxygen/) ***TODO***
 - [Unit Tests](unit-tests.md)
 - [Unauthenticated REST Interface](REST-interface.md)
 - [Dnsseed Policy](dnsseed-policy.md)
@@ -56,7 +53,7 @@ The XDNA repo's [root README](https://github.com/XDNA-Core/XDNA/blob/master/READ
 
 ### Resources
 
-* Discuss on the [BitcoinTalk](https://bitcointalk.org/index.php?topic=1262920.0) or the [XDNA](http://forum.xdna.io/) forum.
+* Discuss on the [BitcoinTalk](https://bitcointalk.org/index.php?topic=1262920.0).
 
 ### Miscellaneous
 - [Assets Attribution](assets-attribution.md)

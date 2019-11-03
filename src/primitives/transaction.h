@@ -7,12 +7,12 @@
 #ifndef BITCOIN_PRIMITIVES_TRANSACTION_H
 #define BITCOIN_PRIMITIVES_TRANSACTION_H
 
-#include <list>
-
 #include "../amount.h"
 #include "../script/script.h"
 #include "../serialize.h"
 #include "../uint256.h"
+
+#include <list>
 
 class CTransaction;
 
@@ -276,7 +276,6 @@ public:
     }
 
     std::string ToString() const;
-
     bool GetCoinAge(uint64_t& nCoinAge) const;  // ppcoin: get transaction coin age
 };
 

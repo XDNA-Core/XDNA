@@ -1,7 +1,7 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2018 The XDNA Core developers
+// Copyright (c) 2017-2019 The XDNA Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -203,8 +203,8 @@ QString windowTitle = tr("XDNA Core") + " - ";
         
         frameBlocksLayout->addWidget(labelEncryptionIcon);
     }
-    
-   // frameBlocksLayout->addWidget(labelStakingIcon);
+
+    frameBlocksLayout->addWidget(labelStakingIcon);
     frameBlocksLayout->addWidget(labelBlocksIcon);
     frameBlocksLayout->addWidget(labelConnectionsIcon);
     frameBlocksLayout->setAlignment(Qt::AlignRight);
@@ -280,13 +280,13 @@ QString windowTitle = tr("XDNA Core") + " - ";
     subscribeToCoreSignals();
   
    //will be activate when pow ends
-   /*
+
    labelStakingIcon->hide();
    QTimer* timerStakingIcon = new QTimer(labelStakingIcon);
    connect(timerStakingIcon, SIGNAL(timeout()), this, SLOT(setStakingStatus()));
    timerStakingIcon->start(10000);
    setStakingStatus();
-   */
+
 }
 
 BitcoinGUI::~BitcoinGUI()

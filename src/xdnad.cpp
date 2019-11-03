@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2018 The XDNA Core developers
+// Copyright (c) 2017-2019 The XDNA Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,7 +11,7 @@
 #include "main.h"
 #include "masternodeconfig.h"
 #include "noui.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "ui_interface.h"
 #include "util.h"
 
@@ -37,7 +37,7 @@
 
 static bool fDaemon;
 
-void DetectShutdownThread(boost::thread_group* threadGroup)
+void DetectShutdownThread()
 {
     bool fShutdown = ShutdownRequested();
     // Tell the main threads to shutdown.
@@ -45,10 +45,7 @@ void DetectShutdownThread(boost::thread_group* threadGroup)
         MilliSleep(200);
         fShutdown = ShutdownRequested();
     }
-    if (threadGroup) {
-        threadGroup->interrupt_all();
-        threadGroup->join_all();
-    }
+    Interrupt();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -57,15 +54,15 @@ void DetectShutdownThread(boost::thread_group* threadGroup)
 //
 bool AppInit(int argc, char* argv[])
 {
-    boost::thread_group threadGroup;
-    boost::thread* detectShutdownThread = NULL;
+    //boost::thread_group threadGroup;
+    //boost::thread* detectShutdownThread = NULL;
 
     bool fRet = false;
 
     //
     // Parameters
     //
-    // If Qt is used, parameters/xdna.conf are parsed in qt/xdna.cpp's main()
+    // If Qt is used, parameters/livenodes.conf are parsed in qt/livenodes.cpp's main()
     ParseParameters(argc, argv);
 
     // Process help and version before taking care about datadir
@@ -143,8 +140,8 @@ bool AppInit(int argc, char* argv[])
 #endif
         SoftSetBoolArg("-server", true);
 
-        detectShutdownThread = new boost::thread(boost::bind(&DetectShutdownThread, &threadGroup));
-        fRet = AppInit2(threadGroup);
+        //detectShutdownThread = new boost::thread(boost::bind(&DetectShutdownThread));
+        fRet = AppInit2();
     } catch (std::exception& e) {
         PrintExceptionContinue(&e, "AppInit()");
     } catch (...) {
@@ -152,20 +149,24 @@ bool AppInit(int argc, char* argv[])
     }
 
     if (!fRet) {
-        if (detectShutdownThread)
-            detectShutdownThread->interrupt();
+        //if (detectShutdownThread)
+            //detectShutdownThread->interrupt();
 
-        threadGroup.interrupt_all();
+        Interrupt();
+        //threadGroup.interrupt_all();
         // threadGroup.join_all(); was left out intentionally here, because we didn't re-test all of
         // the startup-failure cases to make sure they don't result in a hang due to some
         // thread-blocking-waiting-for-another-thread-during-startup case
+    } else {
+        DetectShutdownThread();
     }
 
-    if (detectShutdownThread) {
+    /*if (detectShutdownThread) {
         detectShutdownThread->join();
         delete detectShutdownThread;
         detectShutdownThread = NULL;
     }
+    */
     Shutdown();
 
     return fRet;

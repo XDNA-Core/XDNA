@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2015-2017 The PIVX Core developers
 // Copyright (c) 2017-2018 The Bulwark developers
-// Copyright (c) 2017-2018 The XDNA Core developers
+// Copyright (c) 2017-2019 The XDNA Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -123,6 +123,9 @@ public:
     CSubNet();
     explicit CSubNet(const std::string& strSubnet, bool fAllowLookup = false);
 
+    //constructor for single ip subnet (<ipv4>/32 or <ipv6>/128)
+    explicit CSubNet(const CNetAddr &addr);
+
     bool Match(const CNetAddr& addr) const;
 
     std::string ToString() const;
@@ -130,6 +133,16 @@ public:
 
     friend bool operator==(const CSubNet& a, const CSubNet& b);
     friend bool operator!=(const CSubNet& a, const CSubNet& b);
+    friend bool operator<(const CSubNet& a, const CSubNet& b);
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(network);
+        READWRITE(FLATDATA(netmask));
+        READWRITE(FLATDATA(valid));
+    }
 };
 
 /** A combination of a network address (CNetAddr) and a (TCP) port */

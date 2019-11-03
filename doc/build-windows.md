@@ -32,6 +32,7 @@ To build executables for Windows 32-bit:
     make HOST=i686-w64-mingw32 -j4
     cd ..
     ./configure --prefix=`pwd`/depends/i686-w64-mingw32
+    sudo update-alternatives --config i686-w64-mingw32-g++ #For Ubuntu Xenial 16.04, Ubuntu Artful 17.10 and Windows Subsystem for Linux: Set the default mingw32 g++ compiler option to posix.
     make
 
 To build executables for Windows 64-bit:
@@ -42,6 +43,7 @@ To build executables for Windows 64-bit:
     make HOST=x86_64-w64-mingw32 -j4
     cd ..
     ./configure --prefix=`pwd`/depends/x86_64-w64-mingw32
+    sudo update-alternatives --config x86_64-w64-mingw32-g++ # Ubuntu Xenial 16.04 and Windows Subsystem for Linux: Set the default mingw32 g++ compiler option to posix.
     make
 
 For further documentation on the depends system see [README.md](../depends/README.md) in the depends directory.

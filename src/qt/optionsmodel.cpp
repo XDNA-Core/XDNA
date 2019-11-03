@@ -1,7 +1,7 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2018 The XDNA Core developers
+// Copyright (c) 2017-2019 The XDNA Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -22,8 +22,8 @@
 
 #ifdef ENABLE_WALLET
 #include "masternodeconfig.h"
-#include "wallet.h"
-#include "walletdb.h"
+#include "wallet/wallet.h"
+#include "wallet/walletdb.h"
 #endif
 
 #include <QNetworkProxy>
@@ -72,15 +72,6 @@ void OptionsModel::Init()
     if (!settings.contains("fCoinControlFeatures"))
         settings.setValue("fCoinControlFeatures", false);
     fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
-
-    if (!settings.contains("nObfuscationRounds"))
-        settings.setValue("nObfuscationRounds", 2);
-
-    if (!settings.contains("nAnonymizeXDnaAmount"))
-        settings.setValue("nAnonymizeXDnaAmount", 1000);
-    
-    nObfuscationRounds = settings.value("nObfuscationRounds").toLongLong();
-    nAnonymizeXDnaAmount = settings.value("nAnonymizeXDnaAmount").toLongLong();
 
     if (!settings.contains("fShowMasternodesTab"))
         settings.setValue("fShowMasternodesTab", masternodeConfig.getCount());
@@ -226,10 +217,6 @@ QVariant OptionsModel::data(const QModelIndex& index, int role) const
             return settings.value("nDatabaseCache");
         case ThreadsScriptVerif:
             return settings.value("nThreadsScriptVerif");
-        case ObfuscationRounds:
-            return QVariant(nObfuscationRounds);
-        case AnonymizeXDnaAmount:
-            return QVariant(nAnonymizeXDnaAmount);
         case Listen:
             return settings.value("fListen");
         default:
@@ -332,16 +319,6 @@ bool OptionsModel::setData(const QModelIndex& index, const QVariant& value, int 
                 settings.setValue("language", value);
                 setRestartRequired(true);
             }
-            break;
-        case ObfuscationRounds:
-            nObfuscationRounds = value.toInt();
-            settings.setValue("nObfuscationRounds", nObfuscationRounds);
-            emit obfuscationRoundsChanged(nObfuscationRounds);
-            break;
-        case AnonymizeXDnaAmount:
-            nAnonymizeXDnaAmount = value.toInt();
-            settings.setValue("nAnonymizeXDnaAmount", nAnonymizeXDnaAmount);
-            emit anonymizeXDnaAmountChanged(nAnonymizeXDnaAmount);
             break;
         case CoinControlFeatures:
             fCoinControlFeatures = value.toBool();

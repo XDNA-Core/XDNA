@@ -1,7 +1,7 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2018 The XDNA Core developers
+// Copyright (c) 2017-2019 The XDNA Core developers
 
 #include "multisenddialog.h"
 #include "addressbookpage.h"
@@ -12,6 +12,7 @@
 #include "walletmodel.h"
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QStyle>
 #include <boost/lexical_cast.hpp>
 
 using namespace std;

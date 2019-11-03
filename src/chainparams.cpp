@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2018 The XDNA Core developers
+// Copyright (c) 2017-2019 The XDNA Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -58,12 +58,13 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
                               (50, uint256("000000224104db4572f767923cafd543f36b9a4d1eee117c4dc3e1961ca6371b"))
                               (60200, uint256("00000000000031ba24b923e1966fbe17ae0cdff1efa9d1efc556e2a3cafb5c55"))
                               (134000, uint256("0000000000c08ddeef3b04f5ead225a8d5f4765756d32407b74da5ca9c708b80"))
-                              (165000, uint256("00000000010f679ac3889908996bed4716f33de4608eb48594fd36b65f03831b"));
+                              (165000, uint256("00000000010f679ac3889908996bed4716f33de4608eb48594fd36b65f03831b"))
+                              (680700, uint256("0000000007151c76d2da2416f700269ef7f030a3ad8d0f788cb7107887df40fe"));
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1540098739, // * UNIX timestamp of last checkpoint block
-    234944,      // * total number of transactions between genesis and last checkpoint
+    1572678180, // * UNIX timestamp of last checkpoint block
+    844756,      // * total number of transactions between genesis and last checkpoint
                 //   (the tx=... number in the SetBestChain debug.log lines)
     2000        // * estimated number of transactions per day after checkpoint
 };
@@ -237,8 +238,12 @@ public:
         nStartMasternodePaymentsBlock = 7001;
 
         /** Height or Time Based Activations **/
-        nLastPOWBlock = 1440000;
+        nLastPOWBlock = 682500;
         nModifierUpdateBlock = std::numeric_limits<decltype(nModifierUpdateBlock)>::max();
+        nStartMasternodePayments = 1403728576; //Wed, 25 Jun 2014 20:36:16 GMT
+        nHEXHashTimestamp = 1533567600; // 6  August  2018, 15:00:00 GMT+00:00
+        nF2Timestamp      = 1540728000; // 28 October 2018, 12:00:00 GMT+00:00
+        nF3ActivationHeight = 682500;
 
         /**
          * Build the genesis block. Note that the output of the genesis coinbase cannot
@@ -294,10 +299,7 @@ public:
         nPoolMaxTransactions = 3;
         strSporkKey = "04520C1E6A46596DD9CA9A1A69B96D630410CBA2A1047FC462ADAA5D3BE451CC43B2E30C64A03513F31B3DB9450A3FC2F742DCB4AD99450575219549890392F465";
         strObfuscationPoolDummyAddress = "X87q2gC9j6nNrnzCsg4aY6bHMLsT9nUhEw";
-        nStartMasternodePayments = 1403728576; //Wed, 25 Jun 2014 20:36:16 GMT
 
-        nHEXHashTimestamp = 1533567600; // 6  August  2018, 15:00:00 GMT+00:00
-        nF2Timestamp      = 1540728000; // 28 October 2018, 12:00:00 GMT+00:00
     }
 
     const Checkpoints::CCheckpointData& Checkpoints() const

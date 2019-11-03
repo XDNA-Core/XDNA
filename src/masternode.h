@@ -1,6 +1,6 @@
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2018 The XDNA Core developers
+// Copyright (c) 2017-2019 The XDNA Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -16,11 +16,11 @@
 #include "util.h"
 
 #define MASTERNODE_MIN_CONFIRMATIONS 15
-#define MASTERNODE_MIN_MNP_SECONDS (4 * 60)
+#define MASTERNODE_MIN_MNP_SECONDS (10 * 60)
 #define MASTERNODE_MIN_MNB_SECONDS (5 * 60)
-#define MASTERNODE_PING_SECONDS (4 * 60)
-#define MASTERNODE_EXPIRATION_SECONDS (9 * 60)
-#define MASTERNODE_REMOVAL_SECONDS (10 * 60)
+#define MASTERNODE_PING_SECONDS (5 * 60)
+#define MASTERNODE_EXPIRATION_SECONDS (120 * 60)
+#define MASTERNODE_REMOVAL_SECONDS (130 * 60)
 #define MASTERNODE_CHECK_SECONDS 5
 
 using namespace std;
@@ -62,6 +62,7 @@ public:
 
     bool CheckAndUpdate(int& nDos, bool fRequireEnabled = true);
     bool Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode);
+    bool VerifySignature(CPubKey& pubKeyMasternode, int &nDos);
     void Relay();
 
     uint256 GetHash()
@@ -80,7 +81,6 @@ public:
         // by swapping the members of two classes,
         // the two classes are effectively swapped
         swap(first.vin, second.vin);
-
         swap(first.blockHash, second.blockHash);
         swap(first.sigTime, second.sigTime);
         swap(first.vchSig, second.vchSig);
@@ -114,10 +114,14 @@ private:
 
 public:
     enum state {
+        MASTERNODE_PRE_ENABLED,
         MASTERNODE_ENABLED,
         MASTERNODE_EXPIRED,
+        MASTERNODE_OUTPOINT_SPENT,
         MASTERNODE_REMOVE,
+        MASTERNODE_POSE_BAN,
         MASTERNODE_VIN_SPENT,
+        MASTERNODE_POS_ERROR
     };
 
     enum LevelValue : unsigned {
@@ -139,11 +143,12 @@ public:
     bool unitTest;
     bool allowFreeTx;
     int protocolVersion;
+    int nActiveState;
     int64_t nLastDsq; //the dsq count from the last dsq broadcast of this node
     CMasternodePing lastPing;
 
-    static unsigned Level(CAmount vin_val);
-    static unsigned Level(const CTxIn& vin);
+    static unsigned Level(CAmount vin_val, int blockHeight);
+    static unsigned Level(const CTxIn& vin, int blockHeight);
 
     static bool IsDepositCoins(CAmount);
     static bool IsDepositCoins(const CTxIn& vin, CAmount& vin_val);
@@ -220,6 +225,13 @@ public:
 
     bool UpdateFromNewBroadcast(CMasternodeBroadcast& mnb);
 
+    inline uint64_t SliceHash(uint256& hash, int slice)
+    {
+        uint64_t n = 0;
+        memcpy(&n, &hash + slice * 64, 64);
+        return n;
+    }
+
     void Check(bool forceCheck = false);
 
     bool IsBroadcastedWithin(int seconds)
@@ -240,25 +252,24 @@ public:
         lastPing = CMasternodePing();
     }
 
-    bool IsEnabled() const
+    bool IsEnabled()
     {
         return activeState == MASTERNODE_ENABLED;
     }
 
     int GetMasternodeInputAge()
     {
-        auto chain_tip = chainActive.Tip();
+        if (chainActive.Tip() == NULL) return 0;
 
-        if (!chain_tip)
-            return 0;
-
-        if (!cacheInputAge) {
+        if (cacheInputAge == 0) {
             cacheInputAge = GetInputAge(vin);
-            cacheInputAgeBlock = chain_tip->nHeight;
+            cacheInputAgeBlock = chainActive.Tip()->nHeight;
         }
 
-        return cacheInputAge + (chain_tip->nHeight - cacheInputAgeBlock);
+        return cacheInputAge + (chainActive.Tip()->nHeight - cacheInputAgeBlock);
     }
+
+    std::string GetStatus();
 
     std::string Status()
     {
@@ -268,13 +279,14 @@ public:
         if (activeState == CMasternode::MASTERNODE_EXPIRED) strStatus = "EXPIRED";
         if (activeState == CMasternode::MASTERNODE_VIN_SPENT) strStatus = "VIN_SPENT";
         if (activeState == CMasternode::MASTERNODE_REMOVE) strStatus = "REMOVE";
+        if (activeState == CMasternode::MASTERNODE_POS_ERROR) strStatus = "POS_ERROR";
 
         return strStatus;
     }
 
     unsigned Level()
     {
-        return Level(deposit);
+        return Level(deposit, chainActive.Height());
     }
 
     int64_t GetLastPaid();
@@ -296,7 +308,10 @@ public:
     bool CheckAndUpdate(int& nDoS);
     bool CheckInputsAndAdd(int& nDos);
     bool Sign(CKey& keyCollateralAddress);
+    bool VerifySignature();
     void Relay();
+    std::string GetOldStrMessage();
+    std::string GetNewStrMessage();
 
     ADD_SERIALIZE_METHODS;
 

@@ -49,8 +49,8 @@ bool CMasternodeSync::IsBlockchainSynced()
     if (!lockMain) return false;
 
     CBlockIndex* pindex = chainActive.Tip();
+    if (pindex == NULL) return false;
 
-    if (!pindex) return false;
 
     if (pindex->nTime + 60 * 60 < GetTime())
         return false;
@@ -126,7 +126,7 @@ void CMasternodeSync::GetNextAsset()
             RequestedMasternodeAssets = MASTERNODE_SYNC_MNW;
             break;
         case (MASTERNODE_SYNC_MNW):
-            LogPrintf("CMasternodeSync::GetNextAsset - Sync has finished\n");
+            LogPrint("masternode","CMasternodeSync::GetNextAsset - Sync has finished\n");
             RequestedMasternodeAssets = MASTERNODE_SYNC_FINISHED;
             break;
     }
@@ -217,19 +217,11 @@ void CMasternodeSync::Process()
 
     LogPrint("masternode", "CMasternodeSync::Process() - tick %d RequestedMasternodeAssets %d\n", tick, RequestedMasternodeAssets);
 
-    if (RequestedMasternodeAssets == MASTERNODE_SYNC_INITIAL)
-        GetNextAsset();
+    if (RequestedMasternodeAssets == MASTERNODE_SYNC_INITIAL) GetNextAsset();
 
     // sporks synced but blockchain is not, wait until we're almost at a recent block to continue
-    bool wait_blockchain_sync =  Params().NetworkID() != CBaseChainParams::REGTEST
-                              && !IsBlockchainSynced()
-                              && RequestedMasternodeAssets > MASTERNODE_SYNC_SPORKS;
-
-    if(wait_blockchain_sync)
-    {
-        nAssetSyncStarted = GetTime();
-        return;
-    }
+    if (Params().NetworkID() != CBaseChainParams::REGTEST &&
+        !IsBlockchainSynced() && RequestedMasternodeAssets > MASTERNODE_SYNC_SPORKS) return;
 
     TRY_LOCK(cs_vNodes, lockRecv);
     if (!lockRecv) return;
@@ -252,18 +244,13 @@ void CMasternodeSync::Process()
 
         //set to synced
         if (RequestedMasternodeAssets == MASTERNODE_SYNC_SPORKS) {
-            if (pnode->HasFulfilledRequest("getspork"))
-                continue;
-
-            if (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD) {
-                GetNextAsset();
-                return;
-            }
-
+            if (pnode->HasFulfilledRequest("getspork")) continue;
             pnode->FulfilledRequest("getspork");
 
             pnode->PushMessage("getsporks"); //get current network sporks
+            if (RequestedMasternodeAttempt >= 2) GetNextAsset();
             RequestedMasternodeAttempt++;
+
             return;
         }
 
@@ -275,9 +262,7 @@ void CMasternodeSync::Process()
                     return;
                 }
 
-                if (pnode->HasFulfilledRequest("mnsync"))
-                    continue;
-
+                if (pnode->HasFulfilledRequest("mnsync")) continue;
                 pnode->FulfilledRequest("mnsync");
 
                 // timeout
@@ -295,29 +280,20 @@ void CMasternodeSync::Process()
                     return;
                 }
 
-                if (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3)
-                    return;
+                if (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3) return;
 
-                if(!mnodeman.DsegUpdate(pnode))
-                    continue;
-
-                ++RequestedMasternodeAttempt;
-
+                mnodeman.DsegUpdate(pnode);
+                RequestedMasternodeAttempt++;
                 return;
             }
 
             if (RequestedMasternodeAssets == MASTERNODE_SYNC_MNW) {
-
                 if (lastMasternodeWinner > 0 && lastMasternodeWinner < GetTime() - MASTERNODE_SYNC_TIMEOUT * 2 && RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD) { //hasn't received a new item in the last five seconds, so we'll move to the
                     GetNextAsset();
-                    // Try to activate our masternode if possible
-                    activeMasternode.ManageStatus();
                     return;
                 }
 
-                if (pnode->HasFulfilledRequest("mnwsync"))
-                    continue;
-
+                if (pnode->HasFulfilledRequest("mnwsync")) continue;
                 pnode->FulfilledRequest("mnwsync");
 
                 // timeout
@@ -331,25 +307,36 @@ void CMasternodeSync::Process()
                         nCountFailures++;
                     } else {
                         GetNextAsset();
-                        // Try to activate our masternode if possible
-                        activeMasternode.ManageStatus();
                     }
                     return;
                 }
 
-                if (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3)
+                if (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3) return;
+
+                CBlockIndex* pindexPrev = chainActive.Tip();
+                if (pindexPrev == NULL) return;
+
+                int nMnCount = mnodeman.CountEnabled();
+                pnode->PushMessage("mnget", nMnCount); //sync payees
+                RequestedMasternodeAttempt++;
+
                     return;
+            }
+        }
 
-                if (!chainActive.Tip())
-                    return;
-
-                if(!mnodeman.WinnersUpdate(pnode))
-                    continue;
-
-                ++RequestedMasternodeAttempt;
-
+        if (pnode->nVersion >= ActiveProtocol()) {
+            if ((RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3 || GetTime() - nAssetSyncStarted > MASTERNODE_SYNC_TIMEOUT * 5)) {
+                GetNextAsset();
+                activeMasternode.ManageStatus();
                 return;
             }
+            if (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3) return;
+
+            if(!mnodeman.WinnersUpdate(pnode)) continue;
+
+            RequestedMasternodeAttempt++;
+
+            return;
         }
     }
 }
