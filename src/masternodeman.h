@@ -14,8 +14,9 @@
 #include "sync.h"
 #include "util.h"
 
-#define MASTERNODES_DUMP_SECONDS (15 * 60)
 #define MASTERNODES_DSEG_SECONDS (3 * 60 * 60)
+#define MASTERNODES_DUMP_SECONDS (15 * 60)
+#define MASTERNODES_MNGET_SECONDS (1 * 1 * 60)
 
 using namespace std;
 
@@ -72,9 +73,9 @@ private:
 
 public:
     // Keep track of all broadcasts I've seen
-    map<uint256, CMasternodeBroadcast> mapSeenMasternodeBroadcast;
+    std::map<uint256, CMasternodeBroadcast> mapSeenMasternodeBroadcast;
     // Keep track of all pings I've seen
-    map<uint256, CMasternodePing> mapSeenMasternodePing;
+    std::map<uint256, CMasternodePing> mapSeenMasternodePing;
 
     // keep track of dsq count to prevent masternodes from gaming obfuscation queue
     int64_t nDsqCount;

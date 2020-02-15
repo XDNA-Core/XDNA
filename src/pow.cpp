@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2019 The XDNA Core developers
+// Copyright (c) 2017-2020 The XDNA Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -17,7 +17,7 @@
 #include <math.h>
 
 
-unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, uint32_t nTime)
+unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, uint32_t nTime, const CBlockHeader* pblock)
 {
     /* current difficulty formula, XDNA - DarkGravity v3, written by Evan Duffield - evan@dashpay.io */
     const CBlockIndex* BlockLastSolved = pindexLast;
@@ -30,7 +30,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, uint32_t nTime)
     uint256 PastDifficultyAverage;
     uint256 PastDifficultyAveragePrev;
 
-    if (BlockLastSolved == NULL || 
+    if (BlockLastSolved == NULL ||
 	BlockLastSolved->nHeight == 0 ||
 	BlockLastSolved->nHeight < PastBlocksMin) {
         return Params().StartWork().GetCompact();

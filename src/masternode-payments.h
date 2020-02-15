@@ -31,24 +31,55 @@ void ProcessMessageMasternodePayments(CNode* pfrom, std::string& strCommand, CDa
 bool IsBlockPayeeValid(const CBlock& block, int nBlockHeight);
 std::string GetRequiredPaymentsString(int nBlockHeight);
 bool IsBlockValueValid(const CBlock& block, CAmount nExpectedValue, CAmount nMinted);
+void FillBlockPayee(CMutableTransaction& txNew, uint32_t nTime, CAmount nFees, bool fProofOfStake);
+
+void DumpMasternodePayments();
+
+/** Save Masternode Payment Data (mnpayments.dat)
+ */
+class CMasternodePaymentDB
+{
+private:
+    boost::filesystem::path pathDB;
+    std::string strMagicMessage;
+
+public:
+    enum ReadResult {
+        Ok,
+        FileError,
+        HashReadError,
+        IncorrectHash,
+        IncorrectMagicMessage,
+        IncorrectMagicNumber,
+        IncorrectFormat
+    };
+
+    CMasternodePaymentDB();
+    bool Write(const CMasternodePayments& objToSave);
+    ReadResult Read(CMasternodePayments& objToLoad, bool fDryRun = false);
+};
 
 class CMasternodePayee
 {
 public:
     CScript scriptPubKey;
     unsigned mnlevel;
+    CTxIn vin;
     int nVotes;
 
     CMasternodePayee()
     {
+        scriptPubKey = CScript();
         mnlevel = CMasternode::LevelValue::UNSPECIFIED;
+        vin = CTxIn();
         nVotes = 0;
     }
 
-    CMasternodePayee(unsigned mnlevelIn, const CScript payee, int nVotesIn)
+    CMasternodePayee(unsigned mnlevelIn, const CScript payee, CTxIn vinIn, int nVotesIn)
     {
         scriptPubKey = payee;
         mnlevel = mnlevelIn;
+        vin = vinIn;
         nVotes = nVotesIn;
     }
 
@@ -60,6 +91,7 @@ public:
         READWRITE(scriptPubKey);
         READWRITE(mnlevel);
         READWRITE(nVotes);
+        READWRITE(vin);
     }
 };
 
@@ -67,45 +99,51 @@ public:
 class CMasternodeBlockPayees
 {
 public:
-
     int nBlockHeight;
     std::vector<CMasternodePayee> vecPayments;
 
-    CMasternodeBlockPayees(int nBlockHeightIn = 0)
-        : nBlockHeight{nBlockHeightIn}
+    CMasternodeBlockPayees()
     {
+        nBlockHeight = 0;
+        vecPayments.clear();
+    }
+    CMasternodeBlockPayees(int nBlockHeightIn)
+    {
+        nBlockHeight = nBlockHeightIn;
+        vecPayments.clear();
     }
 
-    void AddPayee(unsigned mnlevel, CScript payeeIn, int nIncrement)
+    void AddPayee(unsigned mnlevel, CScript payeeIn, CTxIn vinIn, int nIncrement)
     {
         LOCK(cs_vecPayments);
 
-        auto payee = std::find_if(vecPayments.begin(), vecPayments.end(), [&payeeIn](const CMasternodePayee& p){
-            return p.scriptPubKey == payeeIn;
-        });
+        for (CMasternodePayee& payee : vecPayments) {
+            if (payee.scriptPubKey == payeeIn && payee.vin == vinIn) {
+                payee.nVotes += nIncrement;
+                return;
+            }
+        }
 
-        if(payee == vecPayments.end())
-            vecPayments.emplace_back(mnlevel, payeeIn, nIncrement);
-        else
-            payee->nVotes += nIncrement;
+        CMasternodePayee c(mnlevel, payeeIn, vinIn, nIncrement);
+        vecPayments.push_back(c);
     }
 
     bool GetPayee(unsigned mnlevel, CScript& payee) const
     {
         LOCK(cs_vecPayments);
 
-        auto payment = vecPayments.cend();
+        std::vector<CMasternodePayee>::const_iterator payment = vecPayments.cend();
 
-        for(auto p = vecPayments.cbegin(), e = vecPayments.cend(); p != e; ++p) {
+        for (std::vector<CMasternodePayee>::const_iterator p = vecPayments.cbegin(), e = vecPayments.cend(); p != e; ++p) {
 
-            if(p->mnlevel != mnlevel)
+            if (p->mnlevel != mnlevel)
                 continue;
 
-            if(payment == vecPayments.cend() || p->nVotes > payment->nVotes)
+            if (payment == vecPayments.cend() || p->nVotes > payment->nVotes)
                 payment = p;
-        };
+        }
 
-        if(payment == vecPayments.cend())
+        if (payment == vecPayments.cend())
             return false;
 
         payee = payment->scriptPubKey;
@@ -113,15 +151,15 @@ public:
         return true;
     }
 
-    bool HasPayeeWithVotes(CScript payee, int nVotesReq)
+    bool HasPayeeWithVotes(CScript payee, CTxIn vin, int nVotesReq)
     {
         LOCK(cs_vecPayments);
 
-        auto payment = std::find_if(vecPayments.cbegin(), vecPayments.cend(), [&](const CMasternodePayee& p){
-            return p.nVotes >= nVotesReq && p.scriptPubKey == payee;
-        });
+        for (CMasternodePayee& p : vecPayments) {
+            if (p.nVotes >= nVotesReq && p.scriptPubKey == payee && p.vin == vin) return true;
+        }
 
-        return payment != vecPayments.cend();
+        return false;
     }
 
     bool IsTransactionValid(const CTransaction& txNew, uint32_t nTime);
@@ -145,21 +183,27 @@ public:
 
     int nBlockHeight;
     CScript payee;
-    std::vector<unsigned char> vchSig;
     unsigned payeeLevel;
+    CTxIn payeeVin;
+
+    std::vector<unsigned char> vchSig;
 
     CMasternodePaymentWinner()
     {
         nBlockHeight = 0;
         vinMasternode = CTxIn();
+        payee = CScript();
         payeeLevel = CMasternode::LevelValue::UNSPECIFIED;
+        payeeVin = CTxIn();
     }
 
     CMasternodePaymentWinner(CTxIn vinIn)
     {
         nBlockHeight = 0;
         vinMasternode = vinIn;
+        payee = CScript();
         payeeLevel = CMasternode::LevelValue::UNSPECIFIED;
+        payeeVin = CTxIn();
     }
 
     uint256 GetHash() const
@@ -168,6 +212,8 @@ public:
         ss << payee;
         ss << nBlockHeight;
         ss << vinMasternode.prevout;
+        ss << payeeLevel;
+        ss << payeeVin;
 
         return ss.GetHash();
     }
@@ -177,10 +223,11 @@ public:
     bool SignatureValid();
     void Relay();
 
-    void AddPayee(CScript payeeIn, unsigned payeeLevelIn)
+    void AddPayee(CScript payeeIn, unsigned payeeLevelIn, CTxIn payeeVinIn)
     {
         payee = payeeIn;
         payeeLevel = payeeLevelIn;
+        payeeVin = payeeVinIn;
     }
 
     ADD_SERIALIZE_METHODS;
@@ -192,15 +239,17 @@ public:
         READWRITE(nBlockHeight);
         READWRITE(payee);
         READWRITE(vchSig);
+        READWRITE(payeeLevel);
+        READWRITE(payeeVin);        
     }
 
     std::string ToString()
     {
-        std::string ret;
+        std::string ret = "";
         ret += vinMasternode.ToString();
-        ret += ", " + boost::lexical_cast<std::string>(nBlockHeight);
-        ret += ", " + boost::lexical_cast<std::string>(payeeLevel) + ":" + payee.ToString();
-        ret += ", " + boost::lexical_cast<std::string>((int)vchSig.size());
+        ret += ", " + std::to_string(nBlockHeight);
+        ret += ", " + std::to_string(payeeLevel) + ":" + payee.ToString();
+        ret += ", " + std::to_string((int)vchSig.size());
         return ret;
     }
 };
@@ -213,7 +262,7 @@ public:
 class CMasternodePayments
 {
 private:
-
+    int nSyncedFromPeer;
     int nLastBlockHeight;
 
 public:
@@ -223,12 +272,13 @@ public:
 
     CMasternodePayments()
     {
+        nSyncedFromPeer = 0;
         nLastBlockHeight = 0;
     }
 
     void Clear()
     {
-        LOCK2(cs_mapMasternodePayeeVotes, cs_mapMasternodeBlocks);
+        LOCK2(cs_mapMasternodeBlocks, cs_mapMasternodePayeeVotes);
         mapMasternodeBlocks.clear();
         mapMasternodePayeeVotes.clear();
         mapMasternodesLastVote.clear();
@@ -239,17 +289,34 @@ public:
 
     void Sync(CNode* node, int nCountNeeded);
     void CleanPaymentList();
+    int LastPayment(CMasternode& mn);
 
     bool GetBlockPayee(int nBlockHeight, unsigned mnlevel, CScript& payee);
     bool IsTransactionValid(const CTransaction& txNew, int nBlockHeight, uint32_t nTime);
     bool IsScheduled(CMasternode& mn, int nNotBlockHeight);
-    bool CanVote(const COutPoint& outMasternode, int nBlockHeight, unsigned mnlevel);
+    bool CanVote(const COutPoint& outMasternode, int nBlockHeight, unsigned mnlevel)
+    {
+        LOCK(cs_mapMasternodePayeeVotes);
 
+        uint256 key = ((outMasternode.hash + outMasternode.n) << 4) + mnlevel;
+
+        if (mapMasternodesLastVote.count(key)) {
+            if (mapMasternodesLastVote[key] == nBlockHeight) {
+                return false;
+            }
+        }
+
+        //record this masternode voted
+        mapMasternodesLastVote[key] = nBlockHeight;
+        return true;
+    }
     int GetMinMasternodePaymentsProto();
     void ProcessMessageMasternodePayments(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);
     std::string GetRequiredPaymentsString(int nBlockHeight);
-    CAmount FillBlockPayee(CMutableTransaction& txNew, uint32_t nTime, int64_t block_value, bool fProofOfStake);
+    CAmount FillBlockPayee(CMutableTransaction& txNew, uint32_t nTime, int64_t nFees, bool fProofOfStake);
     std::string ToString() const;
+    int GetOldestBlock();
+    int GetNewestBlock();
 
     ADD_SERIALIZE_METHODS;
 

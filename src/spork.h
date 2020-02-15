@@ -1,7 +1,7 @@
 // Copyright (c) 2014-2016 The Dash developers
 // Copyright (c) 2016-2017 The PIVX developers
 // Copyright (c) 2017-2018 The Bulwark developers
-// Copyright (c) 2017-2019 The XDNA Core developers
+// Copyright (c) 2017-2020 The XDNA Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -27,7 +27,7 @@ using namespace boost;
     - This would result in old clients getting confused about which spork is for what
 */
 #define SPORK_START 10001
-#define SPORK_END 10008
+#define SPORK_END 10009
 
 #define SPORK_1_SWIFTTX 10001
 #define SPORK_2_SWIFTTX_BLOCK_FILTERING 10002
@@ -37,6 +37,7 @@ using namespace boost;
 #define SPORK_6_MN_WINNER_MINIMUM_AGE 10006
 #define SPORK_7_MN_REBROADCAST_ENFORCEMENT 10007
 #define SPORK_8_NEW_PROTOCOL_ENFORCEMENT 10008
+#define SPORK_9_NEW_PROTOCOL_ENFORCEMENT_2 10009
 
 #define SPORK_1_SWIFTTX_DEFAULT 978307200                         //2001-1-1
 #define SPORK_2_SWIFTTX_BLOCK_FILTERING_DEFAULT 1424217600        //2015-2-18
@@ -48,6 +49,7 @@ using namespace boost;
                                                                  // Set this to zero to emulate classic behaviour
 #define SPORK_7_MN_REBROADCAST_ENFORCEMENT_DEFAULT 4529244393
 #define SPORK_8_NEW_PROTOCOL_ENFORCEMENT_DEFAULT 4529244393
+#define SPORK_9_NEW_PROTOCOL_ENFORCEMENT_2_DEFAULT 4529244393
 
 class CSporkMessage;
 class CSporkManager;
@@ -60,6 +62,7 @@ void LoadSporksFromDB();
 void ProcessSpork(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);
 int64_t GetSporkValue(int nSporkID);
 bool IsSporkActive(int nSporkID);
+void ExecuteSpork(int nSporkID, int64_t nValue);
 void ReprocessBlocks(int nBlocks);
 
 //

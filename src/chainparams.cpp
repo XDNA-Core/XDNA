@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2019 The XDNA Core developers
+// Copyright (c) 2017-2020 The XDNA Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -59,12 +59,13 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
                               (60200, uint256("00000000000031ba24b923e1966fbe17ae0cdff1efa9d1efc556e2a3cafb5c55"))
                               (134000, uint256("0000000000c08ddeef3b04f5ead225a8d5f4765756d32407b74da5ca9c708b80"))
                               (165000, uint256("00000000010f679ac3889908996bed4716f33de4608eb48594fd36b65f03831b"))
-                              (680700, uint256("0000000007151c76d2da2416f700269ef7f030a3ad8d0f788cb7107887df40fe"));
+                              (680700, uint256("0000000007151c76d2da2416f700269ef7f030a3ad8d0f788cb7107887df40fe"))
+                              (840000, uint256("f29504553a9a8a1c6d66602810e62501e7eb7a79891fe29709a99567c6e9033e"));
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1572678180, // * UNIX timestamp of last checkpoint block
-    844756,      // * total number of transactions between genesis and last checkpoint
+    1581651020, // * UNIX timestamp of last checkpoint block
+    1310912,      // * total number of transactions between genesis and last checkpoint
                 //   (the tx=... number in the SetBestChain debug.log lines)
     2000        // * estimated number of transactions per day after checkpoint
 };

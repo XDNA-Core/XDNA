@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2017-2019 The XDNA Core developers
+// Copyright (c) 2017-2020 The XDNA Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -997,7 +997,7 @@ bool MoneyRange(CAmount nValueOut)
     return nValueOut >= 0 && nValueOut <= Params().MaxMoneyOut();
 }
 
-bool CheckTransaction(const CTransaction& tx, CValidationState& state)
+bool CheckTransaction(const CTransaction& tx, CValidationState& state, const int64_t nBlockTime)
 {
     // Basic checks that don't depend on any context
     if (tx.vin.empty())
@@ -3198,7 +3198,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
 
     // Check transactions
     for (const CTransaction& tx : block.vtx)
-        if (!CheckTransaction(tx, state))
+        if (!CheckTransaction(tx, state, block.GetBlockTime()))
             return error("CheckBlock() : CheckTransaction failed");
 
     unsigned int nSigOps = 0;
@@ -3219,7 +3219,7 @@ bool CheckWork(const CBlock block, CBlockIndex* const pindexPrev)
     if (!pindexPrev)
         return error("%s : null pindexPrev for block %s", __func__, block.GetHash().ToString().c_str());
 
-    unsigned int nBitsRequired = GetNextWorkRequired(pindexPrev, block.nTime);
+    unsigned int nBitsRequired = GetNextWorkRequired(pindexPrev, block.nTime, &block);
 
     if (block.nBits != nBitsRequired)
         return error("%s : incorrect proof of work at %d", __func__, pindexPrev->nHeight + 1);
@@ -3673,6 +3673,38 @@ bool ProcessNewBlock(CValidationState& state, CNode* pfrom, CBlock* pblock, CDis
         MarkBlockAsReceived (pblock->GetHash ());
         if (!checked) {
             return error ("%s : CheckBlock FAILED for block %s", __func__, pblock->GetHash().GetHex());
+        }
+
+        // stake input check for prevent "Spent Stake" vulnerability
+        if (pblock->IsProofOfStake()) {
+            CCoinsViewCache coins(pcoinsTip);
+            // check stake inputs in current coinsView and reject block if inputs are not allowed
+            if (!coins.HaveInputs(pblock->vtx[1])) {
+                std::pair<COutPoint, unsigned int> ProofOfStake = pblock->GetProofOfStake();
+
+                // the inputs are spent at the chain tip so we should look at the recently spent outputs
+                auto it = mapStakeSpent.find(ProofOfStake.first);
+                if (it == mapStakeSpent.end())
+                    return state.DoS(100, error("%s : stake input missing/spent", __func__));
+
+                // Check for coin age.
+                    // First try finding the previous transaction in database.
+                    CTransaction txPrev;
+                    uint256 hashBlockPrev;
+                    if (!GetTransaction(ProofOfStake.first.hash, txPrev, hashBlockPrev, true))
+                          return state.DoS(100, error("%s : stake failed to find vin transaction", __func__));
+                    // Find block in map.
+                    CBlockIndex* pindex = NULL;
+                    BlockMap::iterator itBlock = mapBlockIndex.find(hashBlockPrev);
+                    if (itBlock != mapBlockIndex.end())
+                          pindex = itBlock->second;
+                    else
+                          return state.DoS(100, error("%s : stake failed to find block index", __func__));
+                    // Check block time vs stake age requirement.
+                    if (pindex->GetBlockHeader().nTime + nStakeMinAge > ProofOfStake.second)
+                          return state.DoS(100, error("%s : stake under min. stake age", __func__));
+
+            }
         }
 
         // Store to disk
@@ -5556,9 +5588,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 //       it was the one which was commented out
 int ActiveProtocol()
 {
+    if (IsSporkActive(SPORK_9_NEW_PROTOCOL_ENFORCEMENT_2))
+        return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT_2;
+
     if (IsSporkActive(SPORK_8_NEW_PROTOCOL_ENFORCEMENT))
         return MIN_PEER_PROTO_VERSION_AFTER_ENFORCEMENT;
-
 
     return MIN_PEER_PROTO_VERSION_BEFORE_ENFORCEMENT;
 }

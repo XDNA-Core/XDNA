@@ -29,7 +29,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 1
+#serial 4
 
 AC_DEFUN([AX_BOOST_CHRONO],
 [
@@ -67,8 +67,8 @@ AC_DEFUN([AX_BOOST_CHRONO],
         [AC_LANG_PUSH([C++])
 			 CXXFLAGS_SAVE=$CXXFLAGS
 
-			 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/chrono.hpp>]],
-                                   [[boost::chrono::system_clock::time_point time;]])],
+             AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/chrono.hpp>]],
+                                   [[boost::chrono::system_clock::time_point* time = new boost::chrono::system_clock::time_point; delete time;]])],
                    ax_cv_boost_chrono=yes, ax_cv_boost_chrono=no)
 			 CXXFLAGS=$CXXFLAGS_SAVE
              AC_LANG_POP([C++])

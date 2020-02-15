@@ -294,6 +294,9 @@ void MasternodeList::updateNodeList()
     nTimeListUpdated = GetTime();
     fFilterUpdated = false;
 
+    TRY_LOCK(cs_masternodes, lockMasternodes);
+    if (!lockMasternodes) return;
+
     QString strToFilter;
     ui->countLabel->setText("Updating...");
     ui->tableWidgetMasternodes->setSortingEnabled(false);
@@ -304,27 +307,26 @@ void MasternodeList::updateNodeList()
 
     for(auto& mn : vMasternodes)
     {
-        // populate list
-        // Address, Protocol, Status, Active Seconds, Last Seen, Pub Key
-        QTableWidgetItem *addressItem = new QTableWidgetItem(QString::fromStdString(mn.addr.ToString()));
-        QTableWidgetItem* levelItem = new QTableWidgetItem(QString::number(mn.Level()));
-        QTableWidgetItem *protocolItem = new QTableWidgetItem(QString::number(mn.protocolVersion));
-        QTableWidgetItem *statusItem = new QTableWidgetItem(QString::fromStdString(mn.Status()));
-        QTableWidgetItem *activeSecondsItem = new QTableWidgetItem(QString::fromStdString(DurationToDHMS(mn.lastPing.sigTime - mn.sigTime)));
-        QTableWidgetItem *lastSeenItem = new QTableWidgetItem(QString::fromStdString(DateTimeStrFormat("%Y-%m-%d %H:%M", mn.lastPing.sigTime + offsetFromUtc)));
-        QTableWidgetItem *pubkeyItem = new QTableWidgetItem(QString::fromStdString(CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString()));
-        
         if (strCurrentFilter != "")
         {
-            strToFilter =   addressItem->text() + " " +
-                            protocolItem->text() + " " +
-                            statusItem->text() + " " +
-                            activeSecondsItem->text() + " " +
-                            lastSeenItem->text() + " " +
-                            pubkeyItem->text();
+            strToFilter = QString::fromStdString(mn.addr.ToString()) + " " +
+                          QString::number(mn.protocolVersion) + " " +
+                          QString::fromStdString(mn.Status()) + " " +
+                          QString::number(mn.lastPing.sigTime - mn.sigTime) + " " +
+                          QString::fromStdString(DateTimeStrFormat("%Y-%m-%d %H:%M", mn.lastPing.sigTime)) + " " +
+                          QString::fromStdString(CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString());
             if (!strToFilter.contains(strCurrentFilter)) continue;
         }
-
+        // populate list
+        // Address, Protocol, Status, Active Seconds, Last Seen, Pub Key
+        QTableWidgetItem* addressItem = new QTableWidgetItem(QString::fromStdString(mn.addr.ToString()));
+        QTableWidgetItem* levelItem = new QTableWidgetItem(QString::number(mn.Level()));
+        QTableWidgetItem* protocolItem = new QTableWidgetItem(QString::number(mn.protocolVersion));
+        QTableWidgetItem* statusItem = new QTableWidgetItem(QString::fromStdString(mn.Status()));
+        QTableWidgetItem* activeSecondsItem = new QTableWidgetItem(QString::fromStdString(DurationToDHMS(mn.lastPing.sigTime - mn.sigTime)));
+        QTableWidgetItem* lastSeenItem = new QTableWidgetItem(QString::fromStdString(DateTimeStrFormat("%Y-%m-%d %H:%M", mn.lastPing.sigTime + offsetFromUtc)));
+        QTableWidgetItem *pubkeyItem = new QTableWidgetItem(QString::fromStdString(CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString()));
+        
         ui->tableWidgetMasternodes->insertRow(0);
         ui->tableWidgetMasternodes->setItem(0, 0, addressItem);
         ui->tableWidgetMasternodes->setItem(0, 1, levelItem);

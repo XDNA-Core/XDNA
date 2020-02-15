@@ -31,7 +31,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 17
+#serial 18
 
 AC_DEFUN([AX_BOOST_SYSTEM],
 [
@@ -67,10 +67,11 @@ AC_DEFUN([AX_BOOST_SYSTEM],
         AC_CACHE_CHECK(whether the Boost::System library is available,
 					   ax_cv_boost_system,
         [AC_LANG_PUSH([C++])
-			 CXXFLAGS_SAVE=$CXXFLAGS
+             CXXFLAGS_SAVE=$CXXFLAGS
+             CXXFLAGS=
 
-			 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/system/error_code.hpp>]],
-                                   [[boost::system::system_category]])],
+             AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/system/error_code.hpp>]],
+                    [[boost::system::error_category *a = 0;]])],
                    ax_cv_boost_system=yes, ax_cv_boost_system=no)
 			 CXXFLAGS=$CXXFLAGS_SAVE
              AC_LANG_POP([C++])
