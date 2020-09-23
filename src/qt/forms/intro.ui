@@ -126,10 +126,10 @@ padding:3px;
 background-color:#ffffff;
 color:#333333;
 
-border-bottom-color:#c7e2f1;
-border-top-color:#5794bf;
-border-left-color:#b7d5ea;
-border-right-color:#c5daed;
+border-bottom-color:#b8b6b5;
+border-top-color:#757575;
+border-left-color:#a9a8a8;
+border-right-color:#b5b3b3;
 
 }
 
@@ -137,10 +137,10 @@ border-right-color:#c5daed;
 font-size:11px;
 
 
-border-bottom-color:#c7e2f1;
-border-top-color:#5794bf;
-border-left-color:#b7d5ea;
-border-right-color:#c5daed;
+border-bottom-color:#b8b6b5;
+border-top-color:#757575;
+border-left-color:#a9a8a8;
+border-right-color:#b5b3b3;
 }
 
 
@@ -170,7 +170,7 @@ font-size:12px;
            </property>
            <property name="styleSheet">
             <string notr="true">QPushButton {
-    background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: .01 #3868AA, stop: .1 #3868AA, stop: .95 #3868AA, stop: 1 #3868AA);
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: .01 #6a6a6a, stop: .1 #6a6a6a, stop: .95 #6a6a6a, stop: 1 #6a6a6a);
     border:0;
     border-radius:0px;
     color: #ffffff;
@@ -182,7 +182,7 @@ font-size:12px;
     }
 
     QPushButton:hover {
-    background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: .01 #00468c, stop: .1 #00468c, stop: .95 #00468c, stop: 1 #00468c);
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: .01 #6b6b6b, stop: .1 #6b6b6b, stop: .95 #6b6b6b, stop: 1 #6b6b6b);
     }
 
     QPushButton:focus {
@@ -290,7 +290,7 @@ font-size:12px;
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="styleSheet">
       <string notr="true">QPushButton {
-    background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: .01 #3868AA, stop: .1 #3868AA, stop: .95 #3868AA, stop: 1 #3868AA);
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: .01 #6a6a6a, stop: .1 #6a6a6a, stop: .95 #6a6a6a, stop: 1 #6a6a6a);
     border:0;
     border-radius:0px;
     color: #ffffff;
@@ -302,7 +302,7 @@ font-size:12px;
     }
 
     QPushButton:hover {
-    background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: .01 #00468c, stop: .1 #00468c, stop: .95 #00468c, stop: 1 #00468c);
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: .01 #6b6b6b, stop: .1 #6b6b6b, stop: .95 #6b6b6b, stop: 1 #6b6b6b);
     }
 
     QPushButton:focus {
