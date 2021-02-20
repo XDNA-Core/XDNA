@@ -237,8 +237,8 @@ public:
         nLastPOWBlock = 682500;
         nModifierUpdateBlock = std::numeric_limits<decltype(nModifierUpdateBlock)>::max();
         nStartMasternodePayments = 1403728576; //Wed, 25 Jun 2014 20:36:16 GMT
-        nHEXHashTimestamp = 4769537923; // 6  August  2018, 15:00:00 GMT+00:00
-        nF2Timestamp      = 4769537923; // 28 October 2018, 12:00:00 GMT+00:00
+        nHEXHashTimestamp = 1645401276; // 6  August  2018, 15:00:00 GMT+00:00
+        nF2Timestamp      = 1645401276; // 28 October 2018, 12:00:00 GMT+00:00
         nF3ActivationHeight = 682500;
 
         /**
