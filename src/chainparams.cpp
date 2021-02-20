@@ -3,6 +3,7 @@
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
 // Copyright (c) 2017-2020 The XDNA Core developers
+// Copyright (c) 2017-2020 The DOGEPLUS Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -54,18 +55,12 @@ static void convertSeed6(std::vector<CAddress>& vSeedsOut, const SeedSpec6* data
 //    timestamp before)
 // + Contains no strange transactions
 static Checkpoints::MapCheckpoints mapCheckpoints =
-    boost::assign::map_list_of(0, uint256("000003b39d72ad4da1eb2ef2d044032dd95750cc25c435ecad2a236dd22b99fe"))
-                              (50, uint256("000000224104db4572f767923cafd543f36b9a4d1eee117c4dc3e1961ca6371b"))
-                              (60200, uint256("00000000000031ba24b923e1966fbe17ae0cdff1efa9d1efc556e2a3cafb5c55"))
-                              (134000, uint256("0000000000c08ddeef3b04f5ead225a8d5f4765756d32407b74da5ca9c708b80"))
-                              (165000, uint256("00000000010f679ac3889908996bed4716f33de4608eb48594fd36b65f03831b"))
-                              (680700, uint256("0000000007151c76d2da2416f700269ef7f030a3ad8d0f788cb7107887df40fe"))
-                              (840000, uint256("f29504553a9a8a1c6d66602810e62501e7eb7a79891fe29709a99567c6e9033e"));
+    boost::assign::map_list_of(0, uint256("000003b39d72ad4da1eb2ef2d044032dd95750cc25c435ecad2a236dd22b99fe"));
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1581651020, // * UNIX timestamp of last checkpoint block
-    1310912,      // * total number of transactions between genesis and last checkpoint
+    1529665200, // * UNIX timestamp of last checkpoint block
+    0,      // * total number of transactions between genesis and last checkpoint
                 //   (the tx=... number in the SetBestChain debug.log lines)
     2000        // * estimated number of transactions per day after checkpoint
 };
@@ -230,11 +225,11 @@ public:
         nRejectBlockOutdatedMajority = 950;
         nToCheckBlockUpgradeMajority = 1000;
         nMinerThreads = 0;
-        nTargetSpacing = 1 * 60;  // XDNA: 1 minute
+        nTargetSpacing = 1 * 20;  // DOGEPLUS: 20 seconds
         nAntiInstamineTime = 720; // 720 blocks with 1 reward for instamine prevention
         nMaturity = 60;
         nMasternodeCountDrift = 3;
-        nMaxMoneyOut = 367452000 * COIN;
+        nMaxMoneyOut = 128454754 * COIN;
 
         nStartMasternodePaymentsBlock = 7001;
 
@@ -242,8 +237,8 @@ public:
         nLastPOWBlock = 682500;
         nModifierUpdateBlock = std::numeric_limits<decltype(nModifierUpdateBlock)>::max();
         nStartMasternodePayments = 1403728576; //Wed, 25 Jun 2014 20:36:16 GMT
-        nHEXHashTimestamp = 1533567600; // 6  August  2018, 15:00:00 GMT+00:00
-        nF2Timestamp      = 1540728000; // 28 October 2018, 12:00:00 GMT+00:00
+        nHEXHashTimestamp = 4769537923; // 6  August  2018, 15:00:00 GMT+00:00
+        nF2Timestamp      = 4769537923; // 28 October 2018, 12:00:00 GMT+00:00
         nF3ActivationHeight = 682500;
 
         /**
@@ -276,7 +271,7 @@ public:
         assert(hashGenesisBlock == uint256("000003b39d72ad4da1eb2ef2d044032dd95750cc25c435ecad2a236dd22b99fe"));
         assert(genesis.hashMerkleRoot == uint256("89370975b13f97d8f9cfc373b0e9d5cc0e2e06b8dc283c76824e4df03ca2d60a"));
 
-        vSeeds.push_back(CDNSSeedData("xdna.online", "seeds.seeder01.xdna.online"));     // Primary DNS Seeder
+        //vSeeds.push_back(CDNSSeedData("xdna.online", "seeds.seeder01.xdna.online"));     // Primary DNS Seeder
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 75);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 8);
@@ -289,7 +284,7 @@ public:
         convertSeed6(vFixedSeeds, pnSeed6_main, ARRAYLEN(pnSeed6_main));
 
         fRequireRPCPassword = true;
-        fMiningRequiresPeers = true;
+        fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
@@ -371,7 +366,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("xdna.io", "seed01.xdna.io"));     // Primary DNS Seeder
+        //vSeeds.push_back(CDNSSeedData("xdna.io", "seed01.xdna.io"));     // Primary DNS Seeder
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 137); // Testnet XDNA addresses start with 'x'
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 19);  // Testnet XDNA script addresses start with '8' or '9'
