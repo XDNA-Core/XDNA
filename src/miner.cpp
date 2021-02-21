@@ -32,7 +32,7 @@ using namespace std;
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// XDNAMiner
+// DOGEPLUS Miner
 //
 
 //
@@ -445,7 +445,7 @@ bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     {
         LOCK(cs_main);
         if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
-            return error("XDNAMiner : generated block is stale");
+            return error("DOGEPLUS Miner : generated block is stale");
     }
 
     // Remove key from key pool
@@ -463,7 +463,7 @@ bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     // Process this block the same as if we had received it from another node
     CValidationState state;
     if (!ProcessNewBlock(state, NULL, pblock))
-        return error("XDNAMiner : ProcessNewBlock, block not accepted");
+        return error("DOGEPLUS Miner : ProcessNewBlock, block not accepted");
 
     for (CNode* node : vNodes) {
         node->PushInventory(CInv(MSG_BLOCK, pblock->GetHash()));
@@ -480,7 +480,7 @@ int nMintableLastCheck = 0;
 
 void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
 {
-    LogPrintf("XDNAMiner started\n");
+    LogPrintf("DOGEPLUS Miner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("xdna-miner");
 
@@ -561,7 +561,7 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
             continue;
         }
 
-        LogPrintf("Running XDNAMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
+        LogPrintf("Running DOGEPLUS Miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
             ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //
