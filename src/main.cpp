@@ -1610,9 +1610,10 @@ CAmount GetBlockValue(int nHeight, uint32_t nTime)
         return 0.0625 * COIN;
     }
 
-    int64_t netHashRate = chainActive.GetNetworkHashPS(24, nHeight);
+    return 1;
+    //int64_t netHashRate = chainActive.GetNetworkHashPS(24, nHeight);
 
-    return Params().SubsidyValue(netHashRate, nTime, nHeight);
+    //return Params().SubsidyValue(netHashRate, nTime, nHeight);
 }
 
 int64_t GetMasternodePayment(int nHeight, uint32_t nTime, unsigned mnlevel, int64_t blockValue)
