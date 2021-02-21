@@ -81,55 +81,6 @@ static const Checkpoints::CCheckpointData dataRegtest = {
     0,
     100};
 
-const CChainParams::SubsidySwitchPoints& CChainParams::GetSubsidySwitchPoints(uint32_t nTime, int nHeight) const
-{
-    if(nTime <= nHEXHashTimestamp)
-       return subsidySwitchPoints;
-    else if(nTime <= nF2Timestamp)
-       return subsidySwitchPoints_HEXHash;
-    else if(nHeight < static_cast<int>(subsidyScheduleStart_F2))
-        return subsidySwitchPoints_HEXHash;
-
-    auto decrease_interval = std::min(subsidyDecreaseCount_F2, (nHeight - subsidyScheduleStart_F2) / subsidyDecreaseInterval_F2);
-
-    return subsidySwitchPointsSchedule_F2.find(decrease_interval)->second;
-}
-
-CAmount CChainParams::SubsidyValue(SubsidySwitchPoints::key_type level, uint32_t nTime, int nHeight) const
-{
-    const auto& switch_points = GetSubsidySwitchPoints(nTime, nHeight);
-
-    SubsidySwitchPoints::const_iterator point = switch_points.upper_bound(level);
-
-    if(point != switch_points.begin())
-        point = std::prev(point);
-
-    return point->second;
-}
-
-void CChainParams::initSubsidySwitchPointsSchedule()
-{
-    subsidySwitchPointsSchedule_F2[0u] = subsidySwitchPoints_F2_0;
-
-    for(auto i = 1u; i <= subsidyDecreaseCount_F2; ++i)
-    {
-       subsidySwitchPointsSchedule_F2[i] = subsidySwitchPointsSchedule_F2[i - 1];
-
-       for(auto& sp : subsidySwitchPointsSchedule_F2[i])
-       {
-           auto prev_value = sp.second;
-
-           sp.second *= 10000u - subsidyDecreaseValue_F2;
-           sp.second /= 10000u;
-           sp.second += COIN / 10u - 1u;
-           sp.second /= COIN / 10u;
-           sp.second *= COIN / 10u;
-
-           if(sp.second == prev_value && sp.second > COIN / 10u)
-             sp.second -= COIN / 10u;
-       }
-    }
-}
 
 class CMainParams : public CChainParams
 {
