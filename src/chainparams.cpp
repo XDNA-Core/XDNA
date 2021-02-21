@@ -156,70 +156,6 @@ public:
         bnProofOfWorkLimit = ~uint256(0) >> 20;
         bnStartWork = ~uint256(0) >> 24;
 
-        subsidySwitchPoints = {
-            {0         ,   4 * COIN},
-            {2   * 1e12,   5 * COIN},
-            {3   * 1e12,   7 * COIN},
-            {5   * 1e12,   9 * COIN},
-            {8   * 1e12,  11 * COIN},
-            {13  * 1e12,  15 * COIN},
-            {21  * 1e12,  20 * COIN},
-            {34  * 1e12,  27 * COIN},
-            {55  * 1e12,  39 * COIN},
-            {89  * 1e12,  57 * COIN},
-            {144 * 1e12,  85 * COIN},
-            {233 * 1e12, 131 * COIN},
-            {377 * 1e12, 204 * COIN},
-            {610 * 1e12, 321 * COIN},
-            {987 * 1e12, 511 * COIN},
-        };
-        assert(subsidySwitchPoints.size());
-
-        subsidySwitchPoints_HEXHash = {
-            {0         ,   4 * COIN},
-            {20   * 1e9,   5 * COIN},
-            {30   * 1e9,   7 * COIN},
-            {50   * 1e9,  10 * COIN},
-            {80   * 1e9,  14 * COIN},
-            {130  * 1e9,  19 * COIN},
-            {210  * 1e9,  25 * COIN},
-            {340  * 1e9,  32 * COIN},
-            {550  * 1e9,  40 * COIN},
-            {890  * 1e9,  49 * COIN},
-            {1440 * 1e9,  59 * COIN},
-            {2330 * 1e9,  70 * COIN},
-            {3770 * 1e9,  82 * COIN},
-            {6100 * 1e9,  95 * COIN},
-            {9870 * 1e9, 109 * COIN},
-        };
-        assert(subsidySwitchPoints_HEXHash.size());
-
-        subsidySwitchPoints_F2_0 = {
-            {0         ,   38  * (COIN/10)},
-            {20   * 1e9,   47  * (COIN/10)},
-            {30   * 1e9,   66  * (COIN/10)},
-            {50   * 1e9,   94  * (COIN/10)},
-            {80   * 1e9,  131  * (COIN/10)},
-            {130  * 1e9,  177  * (COIN/10)},
-            {210  * 1e9,  233  * (COIN/10)},
-            {340  * 1e9,  298  * (COIN/10)},
-            {550  * 1e9,  373  * (COIN/10)},
-            {890  * 1e9,  456  * (COIN/10)},
-            {1440 * 1e9,  550  * (COIN/10)},
-            {2330 * 1e9,  652  * (COIN/10)},
-            {3770 * 1e9,  764  * (COIN/10)},
-            {6100 * 1e9,  885  * (COIN/10)},
-            {9870 * 1e9,  1015 * (COIN/10)},
-        };
-        assert(subsidySwitchPoints_F2_0.size());
-
-        subsidyScheduleStart_F2    = 177000; // block#XXXXXX ~= nF2Timestamp + 1 day
-        subsidyDecreaseInterval_F2 = 43200;  // 43200 bloks ~= 30 days
-        subsidyDecreaseCount_F2    = 23;     // 23
-        subsidyDecreaseValue_F2    = 694;    // 694 = 6,94% * 100
-
-        initSubsidySwitchPointsSchedule();
-
         nMaxReorganizationDepth = 100;
         nEnforceBlockUpgradeMajority = 750;
         nRejectBlockOutdatedMajority = 950;
@@ -227,7 +163,7 @@ public:
         nMinerThreads = 0;
         nTargetSpacing = 1 * 20;  // DOGEPLUS: 20 seconds
         nAntiInstamineTime = 720; // 720 blocks with 1 reward for instamine prevention
-        nMaturity = 60;
+        nMaturity = 30;
         nMasternodeCountDrift = 3;
         nMaxMoneyOut = 128454754 * COIN;
 
