@@ -5,7 +5,7 @@ XDNA is a brand new digital currency that combines all the positive aspects of s
 The project brings tangible benefits not only to the digital world but also to the real one.
 
 
-More information at [xdna.io](https://xdna.io) Visit our ANN thread at [BitcoinTalk](https://bitcointalk.org/index.php?topic=4517612.0), join our [Discord] (https://discord.gg/S9adMgS) server.
+More information at [xdna.online](https://xdna.online) Visit our ANN thread at [BitcoinTalk](https://bitcointalk.org/index.php?topic=4517612.0), join our [Discord] (https://discord.gg/S9adMgS) server.
 
 ### Coin Specs
 
